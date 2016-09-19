@@ -1,0 +1,85 @@
+数据库权限配置：
+
+1.数据库服务端先 通过无验证方式开始
+2.数据库客户端 通过mongo 进入
+
+>>use admin
+>>db.createUser({
+    user : "adminmanager"
+    pwd  : "adminmanager"
+    roles : [
+        {
+            role : "userAdminAnyDatabase"
+            db   : "admin"
+        }
+    ]
+ })
+在admin数据库创建adminmanager用户，这个用户可以管理所有的数据（通过role配置），但是没法读写任何数据库。
+进行用户管理的时候，先 use admin，然后再添加其他配置用户或者读写用户
+
+##############################################################################################################
+>>use test1
+>>db.createUser({
+    user : "testuser1",
+    pwd  : "testuser1",
+    roles : [
+        {
+            role : "userAdmin",
+            db : "test1"
+        }
+    ]
+ }) 
+创建test1数据库的管理员账户testuser1，这个账户登陆之后可以添加其他读写账户，但是自己不能读写数据库
+
+##############################################################################################################
+3.据库服务端开启认证模式，客户端通过mongo登陆
+
+>> use test1
+>> db.auth("test1","test1") 
+>> db.createUser({
+    user : "dbuser1",
+    pwd  : "dbuser1",
+    roles : [
+        {
+            role : "readWrite",
+            db : "test1"
+        }
+    ]
+ })  
+ 
+用数据管理员账户登陆test1数据库，然后添加数据库用户dbuser1，并赋予读写权限。
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
