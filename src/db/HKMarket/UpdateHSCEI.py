@@ -13,31 +13,31 @@ print(w.isconnected())
 
 
 
-#恒生国企指数
-#wind_code/sec_code     , wind代码 0
-#sec_name               , 股票中文名 1
-#close_price            , 最新收盘价 2
-#total_market_value	    , 总市值 3
-#mkt_cap_float			, 流动市值 4
-#trade_status			, 交易状态 5
-#last_trade_day			, 最新收盘价日期 6
-#ipo_day				, 上市日期 7
-#province				, 省份 8
-#sec_type				, 证券类型 9
-#listing_board			, 上市板 10
-#exchange				, 上市交易所 11				
+#恒生国企指数 HSCEI.HI
+#pre_close     	, 前收盘价 0
+#open          	, 股开盘价 1
+#high          	, 最高价 2
+#low			, 最低价 3
+#close			, 收盘价 4
+#volume			, 交易量 5
+#amt			, 交易总价 6
+#turn			, 交易手数 7
+#pe_ttm			, PE 8
+#pb_lf			, PB 9
+			
 print ("start to query HSCEI.HI")
 
-wset_listed_stocks = w.wsd("HSCEI.HI", "pre_close,open,high,low,close,volume,amt,turn,pe_ttm,pb_lf", "1994-09-01", "2016-09-17", "TradingCalendar=HKEX;Currency=CNY")
+wset_listed_stocks = w.wsd("HSCEI.HI", "pre_close,open,high,low,close,volume,amt,turn,pe_ttm,pb_lf", "1994-09-01", datetime.today(), "TradingCalendar=HKEX;Currency=CNY")
 
+w.stop()
 print("query data done")
 
 print("start to save to database")
 client = MongoClient("localhost", 27017)    #链接数据库服务器
 db = client.hk_index               			#获取数据库连接
 
-#db.hscei_hi.insert_one({"date":wset_listed_stocks.Times[0]}) 
-print(wset_listed_stocks)
+
+print(datetime.today())
 #####################################################################################################
 
 
@@ -53,7 +53,7 @@ for j in range(len(wset_listed_stocks.Data[0])):
             "amt":wset_listed_stocks.Data[6][j],
             "turn":wset_listed_stocks.Data[7][j],
             "pe_ttm":wset_listed_stocks.Data[8][j],
-            "pb_lf":wset_listed_stocks.Data[9][j] }})   
+            "pb_lf":wset_listed_stocks.Data[9][j] }}, upsert=True)   
 
 
 
