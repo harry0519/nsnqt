@@ -6,19 +6,22 @@ import pandas as pd
 #import seaborn as sns
 #%matplotlib inline
 import time,datetime
+import warnings
+warnings.filterwarnings("ignore")
 
 window_short = 10
 window_long = 30
 SD = 0.05
-import csv
+
 
 file_type  = ".csv"
 
-def save_data_to_csv(file_name,data_set):
-    with open(file_name,"w",newline="") as datacsv:
-	    csvwriter = csv.writer(datacsv,dialect = ("excel"))
-	    csvwriter.writerow(data_set)
-	    
+def save_data_to_csv(file_name,content):
+    writer = open(file_name,'w')
+    writer.write(content)
+    writer.close()
+    
+
 # 获取指定股票对应的数据并按日期升序排序
 def import_data( stock, start, end ):
     #df = ts.get_h_data(stock, start=start, end=end).sort_index(ascending=True)
@@ -235,7 +238,7 @@ def trade_describe(df):
     trade_result = trade_result+ '\n' + str(trade)
     print(trade_result)
     #trade_result.to_csv('traderesult.csv')
-    save_data_to_csv('traderesult.csv',trade_result)
+    save_data_to_csv('traderesult.txt',trade_result)
     return trade    
 
 
@@ -268,6 +271,7 @@ def max_drawdown(date_line, capital_line):
     df = pd.DataFrame({'date': date_line, 'capital': capital_line})
 
     df['max2here'] = pd.expanding_max(df['capital'])  # 计算当日之前的账户最大价值
+    
     df['dd2here'] = df['capital'] / df['max2here'] - 1  # 计算当日的回撤
     #  计算最大回撤和结束时间
     temp = df.sort_values(by='dd2here').iloc[0][['date', 'dd2here']]
@@ -483,7 +487,7 @@ def Strategyperformance():
     Strategyperf = Strategyperf + str(max_drawdown(date_line, capital_line))
     print(Strategyperf)
     #Strategyperf.to_csv("performance.csv")
-    save_data_to_csv('performance.csv',Strategyperf)
+    save_data_to_csv('performance.txt',Strategyperf)
 # =====读取数据
 # 读取数据
 #stock_data = get_stock_data('stocktest')
