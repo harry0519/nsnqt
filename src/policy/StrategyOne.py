@@ -1,19 +1,29 @@
+﻿# -*- coding:utf-8 -*-
 import numpy as np
 import pandas as pd
-import tushare as ts
-import matplotlib.pyplot as plt
+#import tushare as ts
+#import matplotlib.pyplot as plt
 #import seaborn as sns
-%matplotlib inline
+#%matplotlib inline
 import time,datetime
 
 window_short = 10
 window_long = 30
 SD = 0.05
+import csv
 
+file_type  = ".csv"
+
+def save_data_to_csv(file_name,data_set):
+    with open(file_name,"w",newline="") as datacsv:
+	    csvwriter = csv.writer(datacsv,dialect = ("excel"))
+	    csvwriter.writerow(data_set)
+	    
 # 获取指定股票对应的数据并按日期升序排序
 def import_data( stock, start, end ):
     #df = ts.get_h_data(stock, start=start, end=end).sort_index(ascending=True)
-    df = pd.read_csv('d:/Trade/DB/' + str(stock) + '.csv', parse_dates=['date'])
+    #df = pd.read_csv('d:/Trade/DB/' + str(stock) + '.csv', parse_dates=['date'])
+    df = pd.read_csv(str(stock) + '.csv', parse_dates=['date'])
     #df = stock_data[['code', 'date', 'open', 'close', 'change']]
     #df = stock_data[['Date', 'Open', 'High', 'Low', 'Close','Volumn', 'Adj Close']]
     
@@ -224,7 +234,8 @@ def trade_describe(df):
     #print(trade_result)
     trade_result = trade_result+ '\n' + str(trade)
     print(trade_result)
-    trade.to_csv('d:/Trade/DB/trade44.csv')
+    #trade_result.to_csv('traderesult.csv')
+    save_data_to_csv('traderesult.csv',trade_result)
     return trade    
 
 
@@ -294,11 +305,11 @@ def strategy2( df ):
         count = count + 1
     #print(df[60:70])
     print(df)
-    df.to_csv('d:/Trade/DB/testresult.csv')
+    #df.to_csv('d:/Trade/DB/testresult.csv')
 
     
 def buysell():
-    df = pd.read_csv('d:/Trade/DB/' + str('testresult') + '.csv', parse_dates=['date'])
+    #df = pd.read_csv('d:/Trade/DB/' + str('testresult') + '.csv', parse_dates=['date'])
     
     #df['position'] = np.where((df['price_position'] < 0.02 and df['price_position'] >= 0) or (df['price_position'] < 0.80 and df['position'].shift(1) == 1), 1, 0)
     #df['position'] = np.where((df['price_position'] < 0.02) & (df['price_position'] >= 0), 1, 0)
@@ -320,7 +331,7 @@ def buysell():
     #df['position'].fillna(0, inplace=True)
     
     #print(df)
-    df.to_csv('d:/Trade/DB/testresult.csv')
+    #df.to_csv('d:/Trade/DB/testresult.csv')
 
 
 #返回当前价格在历史价格的位置百分比
@@ -367,7 +378,7 @@ def analyze_data( df ):
     df['position'].fillna(0, inplace=True)
                 
     #print(df['Regime'].value_counts());
-    df.to_csv('d:/Trade/DB/teststra44.csv')
+    #df.to_csv('d:/Trade/DB/teststra44.csv')
     print(df.tail());
     #df['Regime'].plot(grid=False, lw=1.5, figsize=(12,8))
     #plt.ylim((-0.1,1.1))
@@ -414,7 +425,7 @@ def strategy3_sczbA50( df ):
         #print(df.iloc[count,9])
         count = count + 1
     
-    df.to_csv('d:/Trade/DB/teststra33.csv')
+    #df.to_csv('d:/Trade/DB/teststra33.csv')
     
     #testing_df = df['date','position']
     #df['position']
@@ -471,8 +482,8 @@ def Strategyperformance():
     Strategyperf = Strategyperf + '\n策略'
     Strategyperf = Strategyperf + str(max_drawdown(date_line, capital_line))
     print(Strategyperf)
-
-    
+    #Strategyperf.to_csv("performance.csv")
+    save_data_to_csv('performance.csv',Strategyperf)
 # =====读取数据
 # 读取数据
 #stock_data = get_stock_data('stocktest')
@@ -497,8 +508,8 @@ account(stock_data)
 # 选取时间段
 return_data = select_date_range(stock_data, start_date=pd.to_datetime('20060101'), trading_days=250)
 return_data['capital'] = (return_data['capital_rtn'] + 1).cumprod()
-return_data.to_csv('d:/Trade/DB/returndata.csv')
-return_data['capital'].plot(grid=False, lw=1.5, figsize=(12,8))
+#return_data.to_csv('d:/Trade/DB/returndata.csv')
+##return_data['capital'].plot(grid=False, lw=1.5, figsize=(12,8))
  
 
 # =====根据策略结果,计算评价指标
