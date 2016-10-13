@@ -6,7 +6,8 @@ Created on 2016年10月13日
 '''
 from config import *
 from pymongo import MongoClient
-
+import numpy as np
+import pandas as pd
 class Query():
     '''
     Query data from mongodb on server
@@ -20,17 +21,36 @@ class Query():
         self.client = self.connect()
     
     def connect(self):
-        client = MongoClient(self.ip, self.port)       #�������ݿ������
-        client.admin.authenticate(self.user,self.password)  #test���ݿ��û�����������֤
+        client = MongoClient(self.ip, self.port)       
+        client.admin.authenticate(self.user,self.password)  
         return client
     
-    def get_ml_security_table(self,collection): 
+    def get_ml_security_table(self,collection,filt={}): 
+        '''
+        colections:  collection in mongodb ,which your want to get data from
+        filt: filter condition
+        '''
         db = self.client.ml_security_table
-        return eval("db.{}".format(collection)).find()
+        return db[collection].find(filt)
+    
+    def formatdata(self,query,out=[]):
+        '''
+        query:your source data ,should be a list with dict
+        out:the fields you want to convert into dataframe 
+        '''
+        if not out:
+            query = [i for i in query]
+        else:
+            query = [{k:i[k] for k in out} for i in query]
+        return pd.DataFrame(query)
 
 # query = Query()
-# for i in query.get_ml_security_table("stock"):
+# print(query.formatdata(query.get_ml_security_table("600789.SH"),["date"]))
+# for i in query.get_ml_security_table("600789.SH"):
 #     print(i)
+    
+    
+    
         
         
         
