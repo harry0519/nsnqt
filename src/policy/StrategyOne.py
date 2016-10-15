@@ -7,6 +7,11 @@ import pandas as pd
 #%matplotlib inline
 import time,datetime
 import warnings
+import sys
+sys.path.append('/root/nsnqt/src/common')
+
+print(sys.path)
+import QueryData_mdb 
 warnings.filterwarnings("ignore")
 
 window_short = 10
@@ -26,7 +31,10 @@ def save_data_to_csv(file_name,content):
 def import_data( stock, start, end ):
     #df = ts.get_h_data(stock, start=start, end=end).sort_index(ascending=True)
     #df = pd.read_csv('d:/Trade/DB/' + str(stock) + '.csv', parse_dates=['date'])
-    df = pd.read_csv(str(stock) + '.csv', parse_dates=['date'])
+    query = QueryData_mdb.Query()
+    df = query.formatdata(query.get_ml_security_table("ml_fund_table",stock))
+    print(df)
+    #df = pd.read_csv(str(stock) + '.csv', parse_dates=['date'])
     #df = stock_data[['code', 'date', 'open', 'close', 'change']]
     #df = stock_data[['Date', 'Open', 'High', 'Low', 'Close','Volumn', 'Adj Close']]
     
@@ -491,7 +499,7 @@ def Strategyperformance():
 # =====读取数据
 # 读取数据
 #stock_data = get_stock_data('stocktest')
-stock_data = import_data('150023','2010-01-01','2015-04-23')
+stock_data = import_data('150023.SZ','2010-01-01','2015-04-23')
 #stock_data = import_data('stock_SCZBA50_TestResult1','2010-01-01','2015-04-23')
 
 # 判断交易天数是否满足要求

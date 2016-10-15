@@ -4,6 +4,8 @@ Created on 2016年10月13日
 
 @author: 04yyl
 '''
+import sys
+sys.path.append('/root/nsnqt/src')
 from config import *
 from pymongo import MongoClient
 import numpy as np
@@ -25,12 +27,12 @@ class Query():
         client.admin.authenticate(self.user,self.password)  
         return client
     
-    def get_ml_security_table(self,collection,filt={}): 
+    def get_ml_security_table(self,db,collection,filt={}): 
         '''
         colections:  collection in mongodb ,which your want to get data from
         filt: filter condition
         '''
-        db = self.client.ml_security_table
+        db = eval("self.client.{}".format(db))
         return db[collection].find(filt)
     
     def formatdata(self,query,out=[]):
@@ -44,7 +46,7 @@ class Query():
             query = [{k:i[k] for k in out} for i in query]
         return pd.DataFrame(query)
 
-# query = Query()
+#query = Query()
 # print(query.formatdata(query.get_ml_security_table("600789.SH"),["date"]))
 # for i in query.get_ml_security_table("600789.SH"):
 #     print(i)
