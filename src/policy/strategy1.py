@@ -214,24 +214,14 @@ class strate():
         else: 
             max_successive_loss = 0
         #  输出账户交易各项指标
-        #print ('\n==============每笔交易收益率及同期股票涨跌幅===============')
-        #print (trade[['start_date', 'end_date', 'trade_return', 'stock_return']])
-        #print ('\n====================账户交易的各项指标=====================')
-        #print ('交易次数为：%d   最长持有天数为：%d' % (trade_num, max_holdtime))
-        #print ('每次平均涨幅为：%f' % average_change)
-        #print ('单次最大盈利为：%f  单次最大亏损为：%f' % (max_gain, max_loss))
-        #print ('年均买卖次数为：%f' % trade_per_year)
-        #print ('最大连续盈利次数为：%d  最大连续亏损次数为：%d' % (max_successive_gain, max_successive_loss))
         trade_result = '\n==============每笔交易收益率及同期股票涨跌幅==============='
         trade_result = trade_result + '\n' + str(trade[['start_date', 'end_date', 'trade_return', 'stock_return']])
         trade_result = trade_result + '\n====================账户交易的各项指标====================='
         trade_result = trade_result + '\n交易次数为：' + str(trade_num) + '   最长持有天数为：' + str(max_holdtime)
         trade_result = trade_result + '\n每次平均涨幅为：' + str(average_change)
         trade_result = trade_result + '\n单次最大盈利为：' + str(max_gain) + '  单次最大亏损为：'+ str(max_loss)
-        #print(trade_result)
         trade_result = trade_result+ '\n' + str(trade)
         print(trade_result)
-        #trade_result.to_csv('traderesult.csv')
         self.save_data_to_csv('traderesult.txt',trade_result)
         return trade    
 
@@ -276,79 +266,9 @@ class strate():
         start_date = df.sort_values(by='capital', ascending=False).iloc[0]['date'].strftime('%Y-%m-%d')
     
         maxdrawdown = '\n最大回撤为：' + str(max_dd) + '开始日期：'+str(start_date)+ '结束日期：'+ str(end_date) 
-        #print ('最大回撤为：%f, 开始日期：%s, 结束日期：%s' % (max_dd, start_date, end_date))
         return maxdrawdown
-    
-    # 交易策略2
-    def strategy2(self,df):
-        count = 60
-        df_len = len(df.index)
-        df.loc[:,'price_position'] = np.array(-1)
-        #print(df)
-        #df_len = 70
-        while (count < df_len):
-            df_adjprice = df.iat[count,6]
-            price_position = history_position( df , count, df_adjprice )
-            print(price_position)
-            df.iloc[count,9] = price_position
-            count = count + 1
-        print(df)
 
-    
-#     def buysell(self,):
-#         #df = pd.read_csv('d:/Trade/DB/' + str('testresult') + '.csv', parse_dates=['date'])
-#         
-#         #df['position'] = np.where((df['price_position'] < 0.02 and df['price_position'] >= 0) or (df['price_position'] < 0.80 and df['position'].shift(1) == 1), 1, 0)
-#         #df['position'] = np.where((df['price_position'] < 0.02) & (df['price_position'] >= 0), 1, 0)
-#         #df['position'] = np.where(((df['price_position'] < 0.02) & (df['price_position'] >= 0)) | ((df['price_position'] < 0.80) & (df['position'].shift(1) == 1)) , 1, 0)
-#         #df['position'] = np.where(((df['price_position'] < 1) & (df['position'].shift(1) == 1)), 1, 0)
-#         df['position'] = np.where((df['position'].shift(1)==1), 1, 0)
-#         
-#         
-#         #df['position']= np.where((df['price_position'] < 0.02) & (df['price_position'] >= 0),1, np.where((df['price_position'] < 0.80) & (df['position'].shift(1) == 1),1, 0))
-#         
-#         #df['position'] = df['position'] + df['position_add']
-#         #df['position'] = np.where(df['price_position'] < 0.02, 1, 0)
-#         #df['position'].value_counts()
-#         
-#         #df.ix[df['Regime'] > df['Regime'].shift(1), 'position'] = 1
-#         #df.ix[df['Regime'] < df['Regime'].shift(1), 'position'] = 0
-#         
-#         #df['position'].fillna(method='ffill', inplace=True)
-#         #df['position'].fillna(0, inplace=True)
-#         
-#         #print(df)
-#         #df.to_csv('d:/Trade/DB/testresult.csv')
-
-
-    #返回当前价格在历史价格的位置百分比
-    def history_position(self,df, i, price_adjprice ):
-        new_df = df[0:i+1][['date','adjClose']].sort_values(['adjClose'], ascending=True)
-        
-        new_df['NewIndex'] = range(1,i+2)
-        final_df = new_df[['NewIndex']][(new_df.adjClose==price_adjprice)] 
-        position = final_df.iat[0,0] / len(new_df.index)
-        
-        return(position)
-
-
-
-    # 简单均线策略,输出每天的仓位
-    def analyze_data(self,df ):
-        df['short_window'] = pd.rolling_mean(df.close,window_short)
-        df['long_window'] = pd.rolling_mean(df.close,window_long)
-        df['s-l'] = df['short_window'] - df['long_window']
-        
-        df['position'] = np.where(df['s-l'] > df['long_window'] * SD, 1, 0)
-        df['position'].value_counts()
-        
-        df['position'].fillna(method='ffill', inplace=True)
-        df['position'].fillna(0, inplace=True)
-                    
-        print(df.tail());
-        return
-    
-    # 交易策略3
+    # 交易策略SZCZ A50
     def strategy3_sczbA50(self,df ):
         
         df['position'] = np.where((df['open'] < 0.4)&(df['high'] > 0.4) , 1, 0)
@@ -374,34 +294,22 @@ class strate():
                 df.iat[count,9] = 1
             count = count + 1
         return 
-    
-    def sellA50(self,SCZB ):
-    
-        stock_A50 = self.import_data('A50','2010-01-01','2015-04-23')
-        testing_df = SCZB['date']
-        dict_df = dict(testing_df)
-        print(dict_df)
 
-    def buySCZBsellA50(self,):
-        #Import A50
-        stock_A50 = self.import_data('A50','2010-01-01','2015-04-23')
-
-    def Strategyperformance(self,):
+    def strategyperformance(self,):
         date_line = list(return_data['date'])
         capital_line = list(return_data['capital'])
         stock_line = list(return_data['close'])
-        Strategyperf = '\n股票的年化收益为：'
-        Strategyperf = Strategyperf + str(self.annual_return(date_line, stock_line))
-        Strategyperf = Strategyperf + '\n策略的年化收益为：'
-        Strategyperf = Strategyperf + str(self.annual_return(date_line, capital_line))
-        Strategyperf = Strategyperf + '\n股票'
-        Strategyperf = Strategyperf + str(self.max_drawdown(date_line, stock_line))
-        Strategyperf = Strategyperf + '\n策略'
-        Strategyperf = Strategyperf + str(self.max_drawdown(date_line, capital_line))
-        print(Strategyperf)
-        self.save_data_to_csv('performance.txt',Strategyperf)
-
-
+        strategyperf = '\n股票的年化收益为：'
+        strategyperf = strategyperf + str(self.annual_return(date_line, stock_line))
+        strategyperf = strategyperf + '\n策略的年化收益为：'
+        strategyperf = strategyperf + str(self.annual_return(date_line, capital_line))
+        strategyperf = strategyperf + '\n股票'
+        strategyperf = strategyperf + str(self.max_drawdown(date_line, stock_line))
+        strategyperf = strategyperf + '\n策略'
+        strategyperf = strategyperf + str(self.max_drawdown(date_line, capital_line))
+        print(strategyperf)
+        self.save_data_to_csv('performance.txt',strategyperf)
+        return
 
 st = strate()
 
@@ -424,5 +332,5 @@ st.period_return(return_data, days=250, if_print=True)
 st.trade_describe(stock_data)
 
 # =====根据资金曲线,计算相关评价指标
-st.Strategyperformance()
+st.strategyperformance()
 
