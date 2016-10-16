@@ -310,7 +310,7 @@ class strate():
         self.save_data_to_csv('performance.txt',Strategyperf)
 
 
-def strate1(self):
+def strate1():
     st = strate()
     stock_data = st.import_data('150023.SZ','2010-01-01','2015-04-23')
     # 判断交易天数是否满足要求

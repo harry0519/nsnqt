@@ -38,7 +38,7 @@ class main():
     
     def action(self,args):
         if args.action == "run":
-            eval("strategy1.{}".format(args.policy))
+            eval("strategy1.{}".format(args.policy))()
     
     
 if __name__ == '__main__':
