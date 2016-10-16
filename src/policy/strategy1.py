@@ -4,7 +4,6 @@ import pandas as pd
 import time,datetime
 import warnings
 import sys
-print(sys.path)
 from common import QueryData_mdb 
 
 warnings.filterwarnings("ignore")
@@ -295,42 +294,37 @@ class strate():
             count = count + 1
         return 
 
-    def strategyperformance(self,):
+    def Strategyperformance(self,return_data):
         date_line = list(return_data['date'])
         capital_line = list(return_data['capital'])
         stock_line = list(return_data['close'])
-        strategyperf = '\n股票的年化收益为：'
-        strategyperf = strategyperf + str(self.annual_return(date_line, stock_line))
-        strategyperf = strategyperf + '\n策略的年化收益为：'
-        strategyperf = strategyperf + str(self.annual_return(date_line, capital_line))
-        strategyperf = strategyperf + '\n股票'
-        strategyperf = strategyperf + str(self.max_drawdown(date_line, stock_line))
-        strategyperf = strategyperf + '\n策略'
-        strategyperf = strategyperf + str(self.max_drawdown(date_line, capital_line))
-        print(strategyperf)
-        self.save_data_to_csv('performance.txt',strategyperf)
-        return
+        Strategyperf = '\n股票的年化收益为：'
+        Strategyperf = Strategyperf + str(self.annual_return(date_line, stock_line))
+        Strategyperf = Strategyperf + '\n策略的年化收益为：'
+        Strategyperf = Strategyperf + str(self.annual_return(date_line, capital_line))
+        Strategyperf = Strategyperf + '\n股票'
+        Strategyperf = Strategyperf + str(self.max_drawdown(date_line, stock_line))
+        Strategyperf = Strategyperf + '\n策略'
+        Strategyperf = Strategyperf + str(self.max_drawdown(date_line, capital_line))
+        print(Strategyperf)
+        self.save_data_to_csv('performance.txt',Strategyperf)
 
-st = strate()
 
-stock_data = st.import_data('150023.SZ','2010-01-01','2015-04-23')
-
-# 判断交易天数是否满足要求
-if not st.stock_trading_days(stock_data, trading_days=500):sys.exit()
-st.strategy3_sczbA50(stock_data)
-st.account(stock_data)
-
-# 选取时间段
-return_data = st.select_date_range(stock_data, start_date=pd.to_datetime('20060101'), trading_days=250)
-return_data['capital'] = (return_data['capital_rtn'] + 1).cumprod()
-
-# =====根据策略结果,计算评价指标
-# 计算最近250天的股票,策略累计涨跌幅.以及每年（月，周）股票和策略收益
-st.period_return(return_data, days=250, if_print=True)
-
-# 根据每次买卖的结果,计算相关指标
-st.trade_describe(stock_data)
-
-# =====根据资金曲线,计算相关评价指标
-st.strategyperformance()
-
+def strate1(self):
+    st = strate()
+    stock_data = st.import_data('150023.SZ','2010-01-01','2015-04-23')
+    # 判断交易天数是否满足要求
+    if not st.stock_trading_days(stock_data, trading_days=500):sys.exit()
+    st.strategy3_sczbA50(stock_data)
+    st.account(stock_data)
+    # 选取时间段
+    return_data = st.select_date_range(stock_data, start_date = pd.to_datetime('20060101'), trading_days=250)
+    return_data['capital'] = (return_data['capital_rtn'] + 1).cumprod()
+    # =====根据策略结果,计算评价指标
+    # 计算最近250天的股票,策略累计涨跌幅.以及每年（月，周）股票和策略收益
+    st.period_return(return_data, days=250, if_print=True)
+    # 根据每次买卖的结果,计算相关指标
+    st.trade_describe(stock_data)
+    # =====根据资金曲线,计算相关评价指标
+    st.Strategyperformance(return_data)
+    
