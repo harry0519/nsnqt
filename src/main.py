@@ -1,3 +1,4 @@
+ï»¿# -*- coding:utf-8 -*-
 import argparse
 import sys
 from policy import strategy1
@@ -42,19 +43,19 @@ class main():
     def strate1(self):
         st = strategy1.strate()
         stock_data = st.import_data('150023.SZ','2010-01-01','2015-04-23')
-        # ÅĞ¶Ï½»Ò×ÌìÊıÊÇ·ñÂú×ãÒªÇó
+        # åˆ¤æ–­äº¤æ˜“å¤©æ•°æ˜¯å¦æ»¡è¶³è¦æ±‚
         if not st.stock_trading_days(stock_data, trading_days=500):sys.exit()
         st.strategy3_sczbA50(stock_data)
         st.account(stock_data)
-        # Ñ¡È¡Ê±¼ä¶Î
+        # é€‰å–æ—¶é—´æ®µ
         return_data = st.select_date_range(stock_data, start_date = pd.to_datetime('20060101'), trading_days=250)
         return_data['capital'] = (return_data['capital_rtn'] + 1).cumprod()
-        # =====¸ù¾İ²ßÂÔ½á¹û,¼ÆËãÆÀ¼ÛÖ¸±ê
-        # ¼ÆËã×î½ü250ÌìµÄ¹ÉÆ±,²ßÂÔÀÛ¼ÆÕÇµø·ù.ÒÔ¼°Ã¿Äê£¨ÔÂ£¬ÖÜ£©¹ÉÆ±ºÍ²ßÂÔÊÕÒæ
+        # =====æ ¹æ®ç­–ç•¥ç»“æœ,è®¡ç®—è¯„ä»·æŒ‡æ ‡
+        # è®¡ç®—æœ€è¿‘250å¤©çš„è‚¡ç¥¨,ç­–ç•¥ç´¯è®¡æ¶¨è·Œå¹….ä»¥åŠæ¯å¹´ï¼ˆæœˆï¼Œå‘¨ï¼‰è‚¡ç¥¨å’Œç­–ç•¥æ”¶ç›Š
         st.period_return(return_data, days=250, if_print=True)
-        # ¸ù¾İÃ¿´ÎÂòÂôµÄ½á¹û,¼ÆËãÏà¹ØÖ¸±ê
+        # æ ¹æ®æ¯æ¬¡ä¹°å–çš„ç»“æœ,è®¡ç®—ç›¸å…³æŒ‡æ ‡
         st.trade_describe(stock_data)
-        # =====¸ù¾İ×Ê½ğÇúÏß,¼ÆËãÏà¹ØÆÀ¼ÛÖ¸±ê
+        # =====æ ¹æ®èµ„é‡‘æ›²çº¿,è®¡ç®—ç›¸å…³è¯„ä»·æŒ‡æ ‡
         st.Strategyperformance()
     
     
