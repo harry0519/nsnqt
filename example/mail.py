@@ -20,6 +20,9 @@ message['Subject'] = subject
 smtp = smtplib.SMTP()
 smtp.connect(mail_host,25)
 smtp.login(mail_user,mail_pass)
+print(sender)
+print(receivers)
+print(message.as_string())
 smtp.sendmail(sender,receivers,message.as_string())
 smtp.quit() 
 

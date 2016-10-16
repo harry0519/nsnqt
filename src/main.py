@@ -5,7 +5,6 @@ class main():
     def __init__(self):
         pass
     def parseargs(self):
-        usage = '''usage: %prog [options] arg'''
         parser = argparse.ArgumentParser() 
         
         action_list=["getdata","run","test"]
