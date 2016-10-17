@@ -30,8 +30,8 @@ class Query(mdb):
             query = [{k:i[k] for k in out} for i in query]
         return pd.DataFrame(query)
 
-query = Query()
-print(query.formatdata(query.get_ml_security_table("ml_security_table","600789.SH"),["date"]))
+# query = Query()
+# print(query.formatdata(query.get_ml_security_table("ml_security_table","600789.SH"),["date"]))
 
 
 

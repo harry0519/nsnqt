@@ -1,11 +1,12 @@
 # coding: utf-8
 '''
-Created on 2016��10��17��
+Created on 2016年10月17日
 
 @author: 04yyl
 '''
 import config
 from pymongo import MongoClient
+
 class mdb(object):
     '''
     Query data from mongodb on server

@@ -1,10 +1,9 @@
 ﻿# -*- coding:utf-8 -*-
 import numpy as np
 import pandas as pd
-import time,datetime
 import warnings
 import sys
-from common import QueryData_mdb 
+from common import queryfmdb 
 
 warnings.filterwarnings("ignore")
 
@@ -26,7 +25,7 @@ class strate():
 
     # 获取指定股票对应的数据并按日期升序排序
     def import_data(self,stock, start, end ):
-        query = QueryData_mdb.Query()
+        query = queryfmdb.Query()
         df = query.formatdata(query.get_ml_security_table("ml_fund_table",stock))
         df['change'] = (df['close'] - df['close'].shift(1))/df['close'].shift(1)
         df['code'] = stock
