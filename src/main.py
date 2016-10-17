@@ -2,7 +2,6 @@
 import argparse
 import sys
 from policy import strategy1
-import pandas as pd
 
 class main():
     def __init__(self):
