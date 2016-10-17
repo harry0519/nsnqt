@@ -3,8 +3,8 @@
 # Editdate:2016-10-06
 import sys
 sys.path.append('..\..\common')
-from QueryData_wind import *
-from SaveData_mdb import *
+from queryfwind import *
+from save2mdb import *
 from datetime import *
 
 def internal_init():
@@ -28,7 +28,7 @@ def create_stock_database():
 
     # save all stocks
     for j in range(0,len(wsetdata.Data[0])):
-        # 通过WSS来提取IPO时间
+        # 通锟斤拷WSS锟斤拷锟斤拷取IPO时锟斤拷
         wssdata=w.wss(str(wsetdata.Data[0][j]),'ipo_date')
         wsddata1 = get_history_data(str(wsetdata.Data[0][j]),1,wssdata.Data[0][0])
         

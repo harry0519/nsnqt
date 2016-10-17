@@ -2,8 +2,8 @@
 # Author:harry
 # Editdate:2016-09-25
 
-from GetStockHistory_wind import *
-from SaveData_mdb import *
+from getstockhistoryfwind import *
+from save2mdb import *
 from datetime import *
 
 

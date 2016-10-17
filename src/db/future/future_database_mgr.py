@@ -2,8 +2,8 @@
 # Author:harry
 # Editdate:2016-10-05
 
-from QueryData_wind import *
-from SaveData_mdb import *
+from queryfwind import *
+from save2mdb import *
 from datetime import *
 
 def internal_init():
