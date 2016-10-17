@@ -1,3 +1,5 @@
+from nsnqtlib.servers import serverlist
 from nsnqtlib.db import mongodb
 
-base.test()
+
+local_client = mongodb.MongoDB()
