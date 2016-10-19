@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+
 
 class BaseDB(object):
     __server_ip = "127.0.0.1"
@@ -15,12 +15,7 @@ class BaseDB(object):
         self.__authdb = authdb 
 
     def connect(self):
-        self._db_session = MongoClient(self.__server_ip, self.__server_port)
-        if  self.__user_name:  
-            eval("self._db_session.{}".format(self.__authdb)).authenticate(self.__user_name,self.__pwd)      
-        
-        print("connected to {}".format(self.__server_ip))
-        return self._db_session
+        pass
 
     def disconnect(self):
         return self._db_session.close()
@@ -32,4 +27,4 @@ class BaseDB(object):
         pass
 
     def test(self):
-        print("hello from base.MongoDB")
+        print("hello from basedb")

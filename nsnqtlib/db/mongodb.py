@@ -9,7 +9,6 @@ from nsnqtlib.db.base  import BaseDB
 from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
  
 class MongoDB(BaseDB):
-
     def __init__(self,ip=DB_SERVER, 
                      port=DB_PORT, 
                      user_name=USER, 
@@ -37,6 +36,21 @@ class MongoDB(BaseDB):
             query = [{k:i[k] for k in out} for i in query]
         return pd.DataFrame(query)
     
+
+
+    def connect(self):
+        self.__db_session = MongoClient(self.__server_ip, self.__server_port)
+        if  self.__user_name:        
+            eval("self._db_session.{}".format(self.__authdb)).authenticate(self.__user_name,self.__pwd)      
+        
+        print("connected to {}".format(self.__server_ip))
+        return self._db_session
+
+    def disconnect(self):
+        self._db_session = None
+        return True
+
+
     def save_data(self, db_name, table_name, dataset, fields):
         return True
 
