@@ -1,9 +1,25 @@
 from nsnqtlib.servers import serverlist 
 
-dbserver = serverlist.ALIYUN_SERVERS_IP
-dbport = serverlist.ALIYUN_MONGODB_PORT
-user = serverlist.ALIYUN_DBUSER_NAMEs
-pwd = serverlist.ALIYUN_DB_PWD
+#Use Aliyun environment settings
+DB_SERVER = serverlist.ALIYUN_SERVERS_IP
+DB_PORT = serverlist.ALIYUN_MONGODB_PORT
+USER = serverlist.ALIYUN_DBUSER_NAMEs
+PWD = serverlist.ALIYUN_DB_PWD
+AUTHDBNAME = "admin"
+
+# #Use default local server
+# DB_SERVER = serverlist.LOCAL_SERVER_IP
+# DB_PORT = serverlist.LOCAL_MONGODB_PORT
+# USER = ""
+# PWD = ""
+# AUTHDBNAME = ""
+
+# #Use Harry's home environment
+# DB_SERVER = serverlist.HJ_SERVER_LIST
+# DB_PORT = serverlist.HJ_MONGODB_PORT
+# USER = ""
+# PWD = ""
+# AUTHDBNAME = ""
 
 
 reployto = 'nsnqt_mail@163.com'
