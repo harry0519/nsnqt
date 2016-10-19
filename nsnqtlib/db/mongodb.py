@@ -22,6 +22,10 @@ class MongoDB(BaseDB):
         super(MongoDB,self).__init__(ip=ip,port=port,user_name=user_name,pwd=pwd,authdb=authdb)
         self.client = self.connect()
     
+    def getallcollections(self,db="ml_security_table"):
+        cls = [i for i in eval("self.client.{}".format(db)).collection_names()]
+        return cls
+    
     def read_data(self,db,collection,filt={}): 
         '''
         colections:  collection in mongodb ,which your want to get data from
@@ -119,7 +123,7 @@ class MongoDB(BaseDB):
 
 
 ####################test code    ########################## 
-m=MongoDB()
-query = m.read_data("ml_security_table","stock")[2]
-print(query)
-print(m.format2dataframe(query))
+# m=MongoDB()
+# query = m.read_data("ml_security_table","stock")[2]
+# print(query)
+# print(m.format2dataframe(query))
