@@ -3,7 +3,7 @@ from nsnqtlib.servers import serverlist
 #Use Aliyun environment settings
 DB_SERVER = serverlist.ALIYUN_SERVERS_IP
 DB_PORT = serverlist.ALIYUN_MONGODB_PORT
-USER = serverlist.ALIYUN_DBUSER_NAMEs
+USER = serverlist.ALIYUN_DBUSER_NAME
 PWD = serverlist.ALIYUN_DB_PWD
 AUTHDBNAME = "admin"
 
