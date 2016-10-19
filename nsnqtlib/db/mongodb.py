@@ -14,6 +14,11 @@ class MongoDB(BaseDB):
                      user_name=USER, 
                      pwd=PWD,
                      authdb=AUTHDBNAME):
+        self.__server_ip = ip
+        self.__server_port = port
+        self.__user_name = user_name
+        self.__pwd = pwd
+        self.__authdb = authdb
         super(MongoDB,self).__init__(ip=ip,port=port,user_name=user_name,pwd=pwd,authdb=authdb)
         self.client = self.connect()
     
@@ -36,18 +41,16 @@ class MongoDB(BaseDB):
             query = [{k:i[k] for k in out} for i in query]
         return pd.DataFrame(query)
     
-
-
     def connect(self):
-        self.__db_session = MongoClient(self.__server_ip, self.__server_port)
+        _db_session = MongoClient(self.__server_ip, self.__server_port)
         if  self.__user_name:        
-            eval("self._db_session.{}".format(self.__authdb)).authenticate(self.__user_name,self.__pwd)      
+            eval("_db_session.{}".format(self.__authdb)).authenticate(self.__user_name,self.__pwd)      
         
         print("connected to {}".format(self.__server_ip))
-        return self._db_session
+        return _db_session
 
     def disconnect(self):
-        self._db_session = None
+        self._db_session.close()
         return True
 
 
@@ -116,7 +119,7 @@ class MongoDB(BaseDB):
 
 
 ####################test code    ########################## 
-# m=MongoDB()
-# query = m.read_data("ml_security_table","stock")[0]
-# print(query)
-# print(m.format2dataframe(query))
+m=MongoDB()
+query = m.read_data("ml_security_table","stock")[2]
+print(query)
+print(m.format2dataframe(query))

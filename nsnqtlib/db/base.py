@@ -18,7 +18,7 @@ class BaseDB(object):
         pass
 
     def disconnect(self):
-        return self._db_session.close()
+        pass
 
     def save_data(self, db_name, table_name, dataset, fields):
         pass

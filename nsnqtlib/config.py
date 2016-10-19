@@ -21,7 +21,6 @@ AUTHDBNAME = "admin"
 # PWD = ""
 # AUTHDBNAME = ""
 
-
 reployto = 'nsnqt_mail@163.com'
 receivers = ["04yylxsxh@163.com","harry202@163.com","wangxian.111@163.com","zhouhua1978@163.com"]
 mail_host = 'smtp.163.com'

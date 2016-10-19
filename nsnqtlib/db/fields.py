@@ -2,5 +2,5 @@ par_list_stock  = "pre_close","open","high","low","close","volume","amt","dealnu
 par_list_future = "pre_close","open","high","low","close","volume","amt","oi"
 par_list_fund   = "pre_close","open","high","low","close","volume","amt"
 
-FIELD_SECURITY_GENERAL = 
-FIELD_COMPANY_GENERAL = 
+FIELD_SECURITY_GENERAL = ''
+FIELD_COMPANY_GENERAL = ''
