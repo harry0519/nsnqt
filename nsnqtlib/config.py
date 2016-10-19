@@ -1,9 +1,9 @@
-# dbserver = "115.204.94.113"
-# dbport = "27272"
-dbserver = "114.55.53.68"
-dbport = 27017
-user = "root"
-pwd = "nsnqt"
+from nsnqtlib.servers import serverlist 
+
+dbserver = serverlist.ALIYUN_SERVERS_IP
+dbport = serverlist.ALIYUN_MONGODB_PORT
+user = serverlist.ALIYUN_DBUSER_NAMEs
+pwd = serverlist.ALIYUN_DB_PWD
 
 
 reployto = 'nsnqt_mail@163.com'
