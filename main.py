@@ -2,6 +2,7 @@
 import argparse
 import sys
 from nsnqtlib.strategies import strategy1
+from nsnqtlib.mail import mail
 
 class main():
     def __init__(self):
@@ -35,9 +36,22 @@ class main():
             sys.exit(1)
         return args
     
+    def sendmail(self):
+        pass
     def action(self,args):
         if args.action == "run":
             eval("strategy1.{}".format(args.policy))()
+            if args.sendmail:
+                    fs = ["performance.txt","traderesult.txt"]
+                    content = ""
+                    m = mail.mail()
+                    for i in fs:
+                        with open(i) as f:
+                            content += f.read()
+                    m.setmessage("trade result",content)
+                    m.sendmail()
+                    m.disconnect()
+                
     
     
 if __name__ == '__main__':
