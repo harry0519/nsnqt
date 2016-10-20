@@ -37,20 +37,21 @@ class main():
         return args
     
     def sendmail(self):
-        pass
+        fs = ["performance.txt","traderesult.txt"]
+        content = ""
+        m = mail.mail()
+        for i in fs:
+            with open(i) as f:
+                content += f.read()
+        m.setmessage("trade result",content)
+        m.sendmail()
+        m.disconnect()
+    
     def action(self,args):
         if args.action == "run":
             eval("strategy1.{}".format(args.policy))()
-            if args.sendmail:
-                    fs = ["performance.txt","traderesult.txt"]
-                    content = ""
-                    m = mail.mail()
-                    for i in fs:
-                        with open(i) as f:
-                            content += f.read()
-                    m.setmessage("trade result",content)
-                    m.sendmail()
-                    m.disconnect()
+        if args.sendmail:
+            self.sendmail()
                 
     
     
