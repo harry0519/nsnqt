@@ -221,7 +221,7 @@ class strate():
         trade_result = trade_result+ '\n' + str(trade)
         print(trade_result)
         self.save_data_to_csv('traderesult.txt',trade_result)
-        return trade    
+        return trade, trade_result
 
 
     # 计算年化收益率函数
@@ -307,6 +307,7 @@ class strate():
         Strategyperf = Strategyperf + str(self.max_drawdown(date_line, capital_line))
         print(Strategyperf)
         self.save_data_to_csv('performance.txt',Strategyperf)
+        return Strategyperf
 
 
 def strate1():
