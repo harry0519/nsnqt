@@ -4,7 +4,7 @@ import pandas as pd
 import time,datetime
 import warnings
 import sys
-from common import QueryData_mdb 
+from nsnqtlib.db.mongodb import MongoDB 
 
 warnings.filterwarnings("ignore")
 
@@ -26,8 +26,8 @@ class strate():
 
     # 获取指定股票对应的数据并按日期升序排序
     def import_data(self,stock, start, end ):
-        query = QueryData_mdb.Query()
-        df = query.formatdata(query.get_ml_security_table("ml_fund_table",stock))
+        query = MongoDB()
+        df = query.format2dataframe(query.read_data("ml_fund_table",stock))
         df['change'] = (df['close'] - df['close'].shift(1))/df['close'].shift(1)
         df['code'] = stock
         return df

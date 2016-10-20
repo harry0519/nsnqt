@@ -8,9 +8,9 @@ class StockIndicator(object):
         pass
     
     def islowestvolume(self,data,section=60):
-        if len(data) >= section and data[0] == min(data[0:section]):
+        if (len(data) >= section) and (data[0] == min(data[0:section])):
             return True
         return False
     
     def getaverageprice(self,data,):
-        
+        pass
