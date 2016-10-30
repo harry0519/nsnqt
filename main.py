@@ -37,7 +37,7 @@ class main():
         return args
     
     def sendmail(self):
-        fs = ["performance.txt","traderesult.txt"]
+        fs = ["traderesult.txt"]
         content = ""
         m = mail.mail()
         for i in fs:
