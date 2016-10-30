@@ -2,7 +2,7 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
-import config
+from nsnqtlib import config
 
 class mail():
     def __init__(self,mail_host=config.mail_host,
