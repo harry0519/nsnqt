@@ -18,11 +18,22 @@ class strate():
     def __init__(self):
         pass
     
-    def save_data_to_csv(self,file_name,content):
-        writer = open(file_name,'w')
-        writer.write(content)
-        writer.close()
-    
+    #def save_data_to_csv(self,file_name,content):
+       # writer = open(file_name,'w')
+       # writer.write(content)
+       # writer.close()
+
+    def save_data_to_csv(self,file_name,content, add_data=0):
+        if add_data == 0:
+           writer = open(file_name,'w')
+           writer.write(content)
+           writer.close()
+        else:
+           writer = open(file_name, 'a')
+           writer.write('\n')
+           writer.write(content)
+           writer.close()
+        return
 
     # 获取指定股票对应的数据并按日期升序排序
     def import_data(self,stock, start, end ):
@@ -117,6 +128,8 @@ class strate():
             print ('\n最近' + str(days) + '天股票和策略的累计涨幅:')
             print (recent_rtn_line)
             print ('\n过去每一年股票和策略的收益:')
+            #trade_result = '\n过去每一年股票和策略的收益:'
+            #trade_result = trade_result + '\n' + year_rtn
             print (year_rtn)
             print ('策略年胜率为：%f' % yearly_win_rate)
             print ('股票年胜率为：%f' % yearly_win_rates)
@@ -128,7 +141,24 @@ class strate():
             print (week_rtn)
             print ('策略周胜率为：%f' % weekly_win_rate)
             print ('股票周胜率为：%f' % weekly_win_rates)
-    
+
+        trade_result = '\n最近' + str(days) + '天股票和策略的累计涨幅:'
+        trade_result = trade_result +'\n'+ str(recent_rtn_line)
+        trade_result = '\n过去每一年股票和策略的收益:'
+        trade_result = trade_result +'\n'+ str(year_rtn)
+        trade_result = trade_result +'\n策略年胜率为：' + str(yearly_win_rate)
+        trade_result = trade_result +'\n股票年胜率为：' + str(yearly_win_rates)
+        trade_result = trade_result +'\n过去每一月股票和策略的收益:'
+        trade_result = trade_result +'\n'+ str(month_rtn)
+        trade_result = trade_result +'\n策略月胜率为：' + str(monthly_win_rate)
+        trade_result = trade_result +'\n股票月胜率为：' + str(monthly_win_rates)
+        trade_result = trade_result +'\n过去每一周股票和策略的收益:'
+        trade_result = trade_result +'\n'+str(week_rtn)
+        trade_result = trade_result +'\n策略周胜率为：' + str(weekly_win_rate)
+        trade_result = trade_result +'\n股票周胜率为：' + str(weekly_win_rates)
+
+        self.save_data_to_csv('traderesult.txt', trade_result)
+
         return year_rtn, month_rtn, week_rtn, recent_rtn_line
 
 
@@ -221,7 +251,7 @@ class strate():
         trade_result = trade_result + '\n单次最大盈利为：' + str(max_gain) + '  单次最大亏损为：'+ str(max_loss)
         trade_result = trade_result+ '\n' + str(trade)
         print(trade_result)
-        self.save_data_to_csv('traderesult.txt',trade_result)
+        self.save_data_to_csv('traderesult.txt',trade_result,1)
         return trade    
 
 
@@ -307,7 +337,7 @@ class strate():
         Strategyperf = Strategyperf + '\n策略'
         Strategyperf = Strategyperf + str(self.max_drawdown(date_line, capital_line))
         print(Strategyperf)
-        self.save_data_to_csv('performance.txt',Strategyperf)
+        self.save_data_to_csv('traderesult.txt',Strategyperf, 1)
 
 
 def strate1():
