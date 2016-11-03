@@ -5,7 +5,10 @@ import time,datetime
 import warnings
 import sys
 from nsnqtlib.db.mongodb import MongoDB 
-
+pd.set_option('display.height',1000)
+pd.set_option('display.max_rows',500)
+pd.set_option('display.max_columns',500)
+pd.set_option('display.width',1000)
 warnings.filterwarnings("ignore")
 
 window_short = 10
@@ -19,20 +22,20 @@ class strate():
         pass
     
     #def save_data_to_csv(self,file_name,content):
-       # writer = open(file_name,'w')
-       # writer.write(content)
-       # writer.close()
+        # writer = open(file_name,'w')
+        # writer.write(content)
+        # writer.close()
 
     def save_data_to_csv(self,file_name,content, add_data=0):
         if add_data == 0:
-           writer = open(file_name,'w')
-           writer.write(content)
-           writer.close()
+            writer = open(file_name,'w')
+            writer.write(content)
+            writer.close()
         else:
-           writer = open(file_name, 'a')
-           writer.write('\n')
-           writer.write(content)
-           writer.close()
+            writer = open(file_name, 'a')
+            writer.write('\n')
+            writer.write(content)
+            writer.close()
         return
 
     # 获取指定股票对应的数据并按日期升序排序
@@ -74,7 +77,7 @@ class strate():
         # 当仓位不变时,当天的capital_rtn是当天的change * position
         df.ix[df['position'] == df['position'].shift(1), 'capital_rtn'] = df['change'] * df['position']
     
-        print(df.tail())
+#         print(df.tail())
         return df
 
     # 选取时间段,来计算资金曲线.
@@ -126,10 +129,8 @@ class strate():
         # 输出
         if if_print:
             print ('\n最近' + str(days) + '天股票和策略的累计涨幅:')
-            print (recent_rtn_line)
+            print (self.printdatframe(recent_rtn_line,["date","stock_rtn_line","strategy_rtn_line"]))
             print ('\n过去每一年股票和策略的收益:')
-            #trade_result = '\n过去每一年股票和策略的收益:'
-            #trade_result = trade_result + '\n' + year_rtn
             print (year_rtn)
             print ('策略年胜率为：%f' % yearly_win_rate)
             print ('股票年胜率为：%f' % yearly_win_rates)
@@ -244,12 +245,13 @@ class strate():
             max_successive_loss = 0
         #  输出账户交易各项指标
         trade_result = '\n==============每笔交易收益率及同期股票涨跌幅==============='
-        trade_result = trade_result + '\n' + str(trade[['start_date', 'end_date', 'trade_return', 'stock_return']])
+        trade_result = trade_result + '\n' + self.printdatframe(trade,['start_date', 'end_date', 'trade_return', 'stock_return'])
+#         str(trade[['start_date', 'end_date', 'trade_return', 'stock_return']])
         trade_result = trade_result + '\n====================账户交易的各项指标====================='
         trade_result = trade_result + '\n交易次数为：' + str(trade_num) + '   最长持有天数为：' + str(max_holdtime)
         trade_result = trade_result + '\n每次平均涨幅为：' + str(average_change)
         trade_result = trade_result + '\n单次最大盈利为：' + str(max_gain) + '  单次最大亏损为：'+ str(max_loss)
-        trade_result = trade_result+ '\n' + str(trade)
+        trade_result = trade_result+ '\n' + self.printdatframe(trade,[i for i in trade])
         print(trade_result)
         self.save_data_to_csv('traderesult.txt',trade_result,1)
         return trade    
@@ -338,7 +340,14 @@ class strate():
         Strategyperf = Strategyperf + str(self.max_drawdown(date_line, capital_line))
         print(Strategyperf)
         self.save_data_to_csv('traderesult.txt',Strategyperf, 1)
-
+    
+    def printdatframe(self,df,vol=[]):
+        rst = "".join(["{:22}".format(i) for i in vol])+"\n"
+        for line in  df[vol].values:
+            l=[str(i).split(" ")[0] for i in line]
+            rst += ("".join(["{:22}".format(i) for i in l]))+"\n"
+        return rst
+            
 
 def strate1():
     st = strate()

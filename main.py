@@ -3,6 +3,7 @@ import argparse
 import sys
 from nsnqtlib.strategies import strategy1
 from nsnqtlib.mail import mail
+from email.mime.image import MIMEImage
 
 class main():
     def __init__(self):
@@ -43,6 +44,10 @@ class main():
         for i in fs:
             with open(i) as f:
                 content += f.read()
+#         fp = open('figure_2.png', 'rb')
+#         msgImage = MIMEImage(fp.read())
+#         fp.close()
+#         m.setmessage("trade result",content,msgImage=msgImage)
         m.setmessage("trade result",content)
         m.sendmail()
         m.disconnect()
@@ -53,7 +58,6 @@ class main():
         if args.sendmail:
             self.sendmail()
                 
-    
     
 if __name__ == '__main__':
     m = main()
