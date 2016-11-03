@@ -1,13 +1,13 @@
 ﻿# -*- coding:utf-8 -*-
 import numpy as np
 import pandas as pd
-import time,datetime
+import matplotlib.pyplot as plt
 import warnings
 import sys
 from nsnqtlib.db.mongodb import MongoDB 
 pd.set_option('display.height',1000)
-pd.set_option('display.max_rows',500)
-pd.set_option('display.max_columns',500)
+pd.set_option('display.max_rows',50)
+pd.set_option('display.max_columns',50)
 pd.set_option('display.width',1000)
 warnings.filterwarnings("ignore")
 
@@ -355,7 +355,7 @@ def strate1():
     # 判断交易天数是否满足要求
     if not st.stock_trading_days(stock_data, trading_days=500):sys.exit()
     st.strategy3_sczbA50(stock_data)
-    st.account(stock_data)
+    a = st.account(stock_data)
     # 选取时间段
     return_data = st.select_date_range(stock_data, start_date = pd.to_datetime('20060101'), trading_days=250)
     return_data['capital'] = (return_data['capital_rtn'] + 1).cumprod()
@@ -366,4 +366,8 @@ def strate1():
     st.trade_describe(stock_data)
     # =====根据资金曲线,计算相关评价指标
     st.Strategyperformance(return_data)
+    a["accumulative"]=a["capital_rtn"].cumsum()
+    a.plot(x="date",y="accumulative",kind='line')
+    plt.savefig("capital_rtn.png")
+#     plt.show()  
     

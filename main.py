@@ -39,16 +39,18 @@ class main():
     
     def sendmail(self):
         fs = ["traderesult.txt"]
+        imgs = ["capital_rtn.png"]
         content = ""
         m = mail.mail()
         for i in fs:
             with open(i) as f:
                 content += f.read()
-#         fp = open('figure_2.png', 'rb')
-#         msgImage = MIMEImage(fp.read())
-#         fp.close()
-#         m.setmessage("trade result",content,msgImage=msgImage)
-        m.setmessage("trade result",content)
+        for i in imgs:
+            fp = open(i, 'rb')
+            msgImage = MIMEImage(fp.read())
+            fp.close()
+        m.setmessage("trade result",content,msgImage=msgImage)
+#         m.setmessage("trade result",content)
         m.sendmail()
         m.disconnect()
     

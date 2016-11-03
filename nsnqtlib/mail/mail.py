@@ -31,16 +31,14 @@ class mail():
         smtp.connect(self.mail_host,self.mail_port)
         smtp.set_debuglevel(1)
         smtp.starttls()
-        print(self.mail_user)
-        print(self.mail_pass)
         smtp.login(self.mail_user,self.mail_pass)
         return smtp
     
     def setmessage(self,subject="None",content=None,subtype="plain",msgImage=None):
         message = MIMEMultipart("alternative")
         if msgImage:
-            msgHtml = MIMEText('<b>Some <i>HTML</i> text</b> and an image.<br><img src="cid:image1"><br>good!','html','utf-8')
-            message.attach(msgHtml)
+#             msgHtml = MIMEText(content.replace("\n","<br/>")+' <br><img src="cid:image1"><br>good!','html','utf-8')
+#             message.attach(msgHtml)
             msgImage.add_header('Content-ID', '<image1>')
             message.attach(msgImage)
         if content:
