@@ -372,8 +372,9 @@ def strate1():
     st.trade_describe(stock_data)
     # =====根据资金曲线,计算相关评价指标
     st.Strategyperformance(return_data)
-    a["accumulative"]=a["capital_rtn"].cumsum()
-    a.plot(x="date",y="accumulative",kind='line')
+    a["accumulative"]=1+a["capital_rtn"].cumsum()
+    #a.plot(x="date",y="accumulative",kind='line')
+    a.plot(x="date", y="capital", kind='line')
     plt.savefig("capital_rtn.png")
 #     plt.show()  
     
