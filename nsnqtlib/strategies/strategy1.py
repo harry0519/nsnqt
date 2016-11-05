@@ -301,28 +301,34 @@ class strate():
 
     # 交易策略SZCZ A50
     def strategy3_sczbA50(self,df ):
-        
-        df['position'] = np.where((df['open'] < 0.4)&(df['high'] > 0.4) , 1, 0)
-        
-        df['position'].value_counts()
-        
+
         df['short_window'] = pd.rolling_mean(df.close,window_short)
         df['long_window'] = pd.rolling_mean(df.close,window_long)
         df['s-l'] = df['short_window'] - df['long_window']
-        
+
+        df['position'] = np.where((df['open'] < 0.4) & (df['high'] > 0.4) & (df['close']>df['short_window']), 1, 0)
+        df['position'].value_counts()
+
         df['position'].fillna(method='ffill', inplace=True)
         df['position'].fillna(0, inplace=True)
-    
+
         count = 3
         df_len = len(df.index)
         while (count < df_len):
-            df_closeprice = df.iat[count,4]
-            df_precloseprice = df.iat[count-1,4]
-            df_position = df.iat[count-1,9]
+            df_closeprice = df.iat[count,2]
+            df_precloseprice = df.iat[count-1,2]
+            df_lowprice = df.iat[count, 5]
+            if df.iat[count-1,14] == 0 and df.iat[count,14] == 1:
+                df_orderprice = df.iat[count,2]
+            df_position = df.iat[count-1,14]
+            print(df_position)
             if df_closeprice < 0.45 and df_position == 1:
-                df.iat[count,9] = 1
+                if df_lowprice < 0.92 * df_orderprice:
+                    df.iat[count,14] = 0
+                else:
+                    df.iat[count,14] = 1
             elif df_precloseprice < 0.45 and df_closeprice >= 0.45 and df_position == 1:
-                df.iat[count,9] = 1
+                df.iat[count,14] = 0
             count = count + 1
         return 
 
