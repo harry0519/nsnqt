@@ -4,7 +4,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import warnings
 import sys
-from nsnqtlib.db.mongodb import MongoDB 
+from nsnqtlib.db.mongodb import MongoDB
+from decimal import Decimal
+
 pd.set_option('display.height',1000)
 pd.set_option('display.max_rows',50)
 pd.set_option('display.max_columns',50)
@@ -118,7 +120,11 @@ class strate():
         yearly_win_rates = len(year_rtn[year_rtn['change'] > 0]) / len(year_rtn[year_rtn['change'] != 0])
         monthly_win_rates = len(month_rtn[month_rtn['change'] > 0]) / len(month_rtn[month_rtn['change'] != 0])
         weekly_win_rates = len(week_rtn[week_rtn['change'] > 0]) / len(week_rtn[week_rtn['change'] != 0])
-    
+
+        df['stock_rtn_line'] = (df['change'] + 1).cumprod() - 1
+        df['strategy_rtn_line'] = (df['capital_rtn'] + 1).cumprod() - 1
+        df.to_csv('period_return.csv')
+
         # 计算最近days的累计涨幅
         df = df.iloc[-days:]
         recent_rtn_line = df[['date']]
@@ -144,8 +150,9 @@ class strate():
             print ('股票周胜率为：%f' % weekly_win_rates)
 
         trade_result = '\n最近' + str(days) + '天股票和策略的累计涨幅:'
-        trade_result = trade_result +'\n'+ str(recent_rtn_line)
-        trade_result = '\n过去每一年股票和策略的收益:'
+        #trade_result = trade_result +'\n'+ str(recent_rtn_line)
+        trade_result = trade_result + '\n' + str(self.printdatframe(recent_rtn_line,["date","stock_rtn_line","strategy_rtn_line"]))
+        trade_result = trade_result + '\n过去每一年股票和策略的收益:'
         trade_result = trade_result +'\n'+ str(year_rtn)
         trade_result = trade_result +'\n策略年胜率为：' + str(yearly_win_rate)
         trade_result = trade_result +'\n股票年胜率为：' + str(yearly_win_rates)
@@ -266,16 +273,34 @@ class strate():
         """
         # 将数据序列合并成dataframe并按日期排序
         df = pd.DataFrame({'date': date_line, 'capital': capital_line})
-    
+
         # 计算年化收益率
         annual = (df['capital'].iloc[-1] / df['capital'].iloc[0]) ** (250 / len(df)) - 1
-    
+
         annualresult = str(annual)
         print (annual)
-        return annualresult    
+        return annualresult
+
+        # 计算总收益率函数
+        # 计算年化收益率函数
+    def total_return(self, date_line, capital_line):
+            """
+            :param date_line: 日期序列
+            :param capital_line: 账户价值序列
+            :return: 输出在回测期间的年化收益率
+            """
+            # 将数据序列合并成dataframe并按日期排序
+            df = pd.DataFrame({'date': date_line, 'capital': capital_line})
+
+            # 计算年化收益率
+            total_ret = df['capital'].iloc[-1] / df['capital'].iloc[0] - 1
+
+            #totalresult = str(total_ret)
+            totalresult = str(Decimal(total_ret).quantize(Decimal('0.0000')))
+            return totalresult
 
 
-    # 计算最大回撤函数
+            # 计算最大回撤函数
     def max_drawdown(self,date_line, capital_line):
         """
         :param date_line: 日期序列
@@ -297,7 +322,7 @@ class strate():
         start_date = df.sort_values(by='capital', ascending=False).iloc[0]['date'].strftime('%Y-%m-%d')
     
         maxdrawdown = '\n最大回撤为：' + str(max_dd) + '开始日期：'+str(start_date)+ '结束日期：'+ str(end_date) 
-        return maxdrawdown
+        return maxdrawdown, max_dd
 
     # 交易策略SZCZ A50
     def strategy3_sczbA50(self,df ):
@@ -332,20 +357,34 @@ class strate():
             count = count + 1
         return 
 
-    def Strategyperformance(self,return_data):
+    def strategyperformance(self,return_data):
         date_line = list(return_data['date'])
         capital_line = list(return_data['capital'])
         stock_line = list(return_data['close'])
-        Strategyperf = '\n股票的年化收益为：'
-        Strategyperf = Strategyperf + str(self.annual_return(date_line, stock_line))
-        Strategyperf = Strategyperf + '\n策略的年化收益为：'
-        Strategyperf = Strategyperf + str(self.annual_return(date_line, capital_line))
-        Strategyperf = Strategyperf + '\n股票'
-        Strategyperf = Strategyperf + str(self.max_drawdown(date_line, stock_line))
-        Strategyperf = Strategyperf + '\n策略'
-        Strategyperf = Strategyperf + str(self.max_drawdown(date_line, capital_line))
-        print(Strategyperf)
-        self.save_data_to_csv('traderesult.txt',Strategyperf, 1)
+        return_data_len = len(return_data.index)
+
+        capital_maxdrawdown, capital_maxdd =self.max_drawdown(date_line, capital_line)
+        stock_maxdrawdown, stock_maxdd = self.max_drawdown(date_line, stock_line)
+
+        capital_maxdd = Decimal(capital_maxdd).quantize(Decimal('0.0000'))
+
+        strategyperf = '\n== == == == == == == == == == 策略回归测试报告 == == == == == == == == == == == ='
+        strategyperf = strategyperf + '\n收益       基准收益          最大回撤率'
+        strategyperf = strategyperf + '\n' + str(Decimal(return_data.iat[return_data_len-1, 16]-1).quantize(Decimal('0.0000'))) + '        '+str(self.total_return(date_line, stock_line))+'          ' + str(capital_maxdd)
+        strategyperf = strategyperf + '\n股票的年化收益为：'
+        strategyperf = strategyperf + str(self.annual_return(date_line, stock_line))
+        strategyperf = strategyperf + '\n策略的年化收益为：'
+        strategyperf = strategyperf + str(self.annual_return(date_line, capital_line))
+        strategyperf = strategyperf + '\n股票'
+        #strategyperf = strategyperf + str(self.max_drawdown(date_line, stock_line))
+        strategyperf = strategyperf + str(stock_maxdrawdown)
+        strategyperf = strategyperf + '\n策略'
+        #strategyperf = strategyperf + str(self.max_drawdown(date_line, capital_line))
+        strategyperf = strategyperf + str(capital_maxdrawdown)
+        print(strategyperf)
+        self.save_data_to_csv('traderesult.txt',strategyperf, 1)
+        return_data.to_csv('return_data.csv')
+        return
     
     def printdatframe(self,df,vol=[]):
         rst = "".join(["{:22}".format(i) for i in vol])+"\n"
@@ -371,10 +410,10 @@ def strate1():
     # 根据每次买卖的结果,计算相关指标
     st.trade_describe(stock_data)
     # =====根据资金曲线,计算相关评价指标
-    st.Strategyperformance(return_data)
-    a["accumulative"]=1+a["capital_rtn"].cumsum()
+    st.strategyperformance(return_data)
+    #a["accumulative"]=1+a["capital_rtn"].cumsum()
     #a.plot(x="date",y="accumulative",kind='line')
-    a.plot(x="date", y="capital", kind='line')
-    plt.savefig("capital_rtn.png")
+    #a.plot(x="date", y="capital", kind='line')
+    #plt.savefig("capital_rtn.png")
 #     plt.show()  
     
