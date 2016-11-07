@@ -123,7 +123,7 @@ class strate():
 
         df['stock_rtn_line'] = (df['change'] + 1).cumprod() - 1
         df['strategy_rtn_line'] = (df['capital_rtn'] + 1).cumprod() - 1
-        df.to_csv('period_return.csv')
+        #df.to_csv('period_return.csv')
 
         # 计算最近days的累计涨幅
         df = df.iloc[-days:]
@@ -165,7 +165,7 @@ class strate():
         trade_result = trade_result +'\n策略周胜率为：' + str(weekly_win_rate)
         trade_result = trade_result +'\n股票周胜率为：' + str(weekly_win_rates)
 
-        self.save_data_to_csv('traderesult.txt', trade_result)
+        self.save_data_to_csv('traderesult.txt', trade_result,1)
 
         return year_rtn, month_rtn, week_rtn, recent_rtn_line
 
@@ -324,6 +324,117 @@ class strate():
         maxdrawdown = '\n最大回撤为：' + str(max_dd) + '开始日期：'+str(start_date)+ '结束日期：'+ str(end_date) 
         return maxdrawdown, max_dd
 
+    # 计算收益波动率的函数
+    def volatility(self, date_line, return_line):
+        """
+        :param date_line: 日期序列
+        :param return_line: 账户日收益率序列
+        :return: 输出回测期间的收益波动率
+        """
+        from math import sqrt
+        df = pd.DataFrame({'date': date_line, 'rtn': return_line})
+        # 计算波动率
+        vol = df['rtn'].std() * sqrt(250)
+        print('收益波动率为：%f' % vol)
+        return vol
+
+    # 计算贝塔的函数
+    def beta(self, date_line, return_line, indexreturn_line):
+        """
+        :param date_line: 日期序列
+        :param return_line: 账户日收益率序列
+        :param indexreturn_line: 指数的收益率序列
+        :return: 输出beta值
+        """
+        df = pd.DataFrame({'date': date_line, 'rtn': return_line, 'benchmark_rtn': indexreturn_line})
+        # 账户收益和基准收益的协方差除以基准收益的方差
+        b = df['rtn'].cov(df['benchmark_rtn']) / df['benchmark_rtn'].var()
+        print('beta: %f' % b)
+        return b
+
+    # 计算alpha的函数
+    def alpha(self, date_line, capital_line, index_line, return_line, indexreturn_line):
+        """
+        :param date_line: 日期序列
+        :param capital_line: 账户价值序列
+        :param index_line: 指数序列
+        :param return_line: 账户日收益率序列
+        :param indexreturn_line: 指数的收益率序列
+        :return: 输出alpha值
+        """
+        # 将数据序列合并成dataframe并按日期排序
+        df = pd.DataFrame({'date': date_line, 'capital': capital_line, 'benchmark': index_line, 'rtn': return_line,
+                           'benchmark_rtn': indexreturn_line})
+        df.sort_values(by='date', inplace=True)
+        df.reset_index(drop=True, inplace=True)
+        rng = pd.period_range(df['date'].iloc[0], df['date'].iloc[-1], freq='D')
+        rf = 0.0284  # 无风险利率取10年期国债的到期年化收益率
+
+        annual_stock = pow(df.ix[len(df.index) - 1, 'capital'] / df.ix[0, 'capital'], 250 / len(rng)) - 1  # 账户年化收益
+        annual_index = pow(df.ix[len(df.index) - 1, 'benchmark'] / df.ix[0, 'benchmark'], 250 / len(rng)) - 1  # 基准年化收益
+
+        beta = df['rtn'].cov(df['benchmark_rtn']) / df['benchmark_rtn'].var()  # 计算贝塔值
+        a = (annual_stock - rf) - beta * (annual_index - rf)  # 计算alpha值
+        print('alpha：%f' % a)
+        return a
+
+    # 计算夏普比函数
+    def sharpe_ratio(self, date_line, capital_line, return_line):
+        """
+        :param date_line: 日期序列
+        :param capital_line: 账户价值序列
+        :param return_line: 账户日收益率序列
+        :return: 输出夏普比率
+        """
+        from math import sqrt
+        # 将数据序列合并为一个dataframe并按日期排序
+        df = pd.DataFrame({'date': date_line, 'capital': capital_line, 'rtn': return_line})
+        df.sort_values(by='date', inplace=True)
+        df.reset_index(drop=True, inplace=True)
+        rng = pd.period_range(df['date'].iloc[0], df['date'].iloc[-1], freq='D')
+        rf = 0.0284  # 无风险利率取10年期国债的到期年化收益率
+        # 账户年化收益
+        annual_stock = pow(df.ix[len(df.index) - 1, 'capital'] / df.ix[0, 'capital'], 250 / len(rng)) - 1
+        # 计算收益波动率
+        volatility = df['rtn'].std() * sqrt(250)
+        # 计算夏普比
+        sharpe = (annual_stock - rf) / volatility
+        print('sharpe_ratio: %f' % sharpe)
+        return(sharpe)
+
+    # 计算信息比率函数
+    def info_ratio(self, date_line, return_line, indexreturn_line):
+        """
+        :param date_line: 日期序列
+        :param return_line: 账户日收益率序列
+        :param indexreturn_line: 指数的收益率序列
+        :return: 输出信息比率
+        """
+        from math import sqrt
+        df = pd.DataFrame({'date': date_line, 'rtn': return_line, 'benchmark_rtn': indexreturn_line})
+        df['diff'] = df['rtn'] - df['benchmark_rtn']
+        annual_mean = df['diff'].mean() * 250
+        annual_std = df['diff'].std() * sqrt(250)
+        info = annual_mean / annual_std
+        print('info_ratio: %f' % info)
+        return info
+
+    # 计算股票和基准在回测期间的累计收益率并画图
+    def cumulative_return(date_line, return_line, indexreturn_line):
+        """
+        :param date_line: 日期序列
+        :param return_line: 账户日收益率序列
+        :param indexreturn_line: 指数日收益率序列
+        :return: 画出股票和基准在回测期间的累计收益率的折线图
+        """
+        df = pd.DataFrame({'date': date_line, 'rtn': return_line, 'benchmark_rtn': indexreturn_line})
+        df['stock_cumret'] = (df['rtn'] + 1).cumprod()
+        df['benchmark_cumret'] = (df['benchmark_rtn'] + 1).cumprod()
+        # 画出股票和基准在回测期间的累计收益率的折线图
+        df['stock_cumret'].plot(style='k-', figsize=(12, 5))
+        df['benchmark_cumret'].plot(style='k--', figsize=(12, 5))
+        plt.show()
+
     # 交易策略SZCZ A50
     def strategy3_sczbA50(self,df ):
 
@@ -361,16 +472,34 @@ class strate():
         date_line = list(return_data['date'])
         capital_line = list(return_data['capital'])
         stock_line = list(return_data['close'])
+        return_line = list(return_data['capital_rtn'])  # 收益率序列
+        indexreturn_line = list(return_data['change'])  # 指数的变化率序列
+        #index_line = list(benchmark['close'])  # 指数序列
         return_data_len = len(return_data.index)
 
         capital_maxdrawdown, capital_maxdd =self.max_drawdown(date_line, capital_line)
         stock_maxdrawdown, stock_maxdd = self.max_drawdown(date_line, stock_line)
-
         capital_maxdd = Decimal(capital_maxdd).quantize(Decimal('0.0000'))
+
+        sharpe_rate = self.sharpe_ratio(date_line, capital_line, return_line)
+        sharpe_rate = Decimal(sharpe_rate).quantize(Decimal('0.0000'))
+
+        info = self.info_ratio(date_line, return_line, indexreturn_line)
+        info = Decimal(info).quantize(Decimal('0.0000'))
+
+        volati = self.volatility(date_line, return_line)
+        volati = Decimal(volati).quantize(Decimal('0.0000'))
+
+        #alph = self.alpha(date_line, capital_line, index_line, return_line, indexreturn_line)
 
         strategyperf = '\n== == == == == == == == == == 策略回归测试报告 == == == == == == == == == == == ='
         strategyperf = strategyperf + '\n收益       基准收益          最大回撤率'
         strategyperf = strategyperf + '\n' + str(Decimal(return_data.iat[return_data_len-1, 16]-1).quantize(Decimal('0.0000'))) + '        '+str(self.total_return(date_line, stock_line))+'          ' + str(capital_maxdd)
+        strategyperf = strategyperf + '\n夏普比率   信息比率          收益波动率'
+        strategyperf = strategyperf + '\n' + str(sharpe_rate)  + '        '+str(info) + '          '+str(volati)
+        #strategyperf = strategyperf + '\nalpha          beta'
+
+        '''
         strategyperf = strategyperf + '\n股票的年化收益为：'
         strategyperf = strategyperf + str(self.annual_return(date_line, stock_line))
         strategyperf = strategyperf + '\n策略的年化收益为：'
@@ -381,9 +510,10 @@ class strate():
         strategyperf = strategyperf + '\n策略'
         #strategyperf = strategyperf + str(self.max_drawdown(date_line, capital_line))
         strategyperf = strategyperf + str(capital_maxdrawdown)
+       '''
         print(strategyperf)
-        self.save_data_to_csv('traderesult.txt',strategyperf, 1)
-        return_data.to_csv('return_data.csv')
+        self.save_data_to_csv('traderesult.txt',strategyperf, 0)
+        #return_data.to_csv('return_data.csv')
         return
     
     def printdatframe(self,df,vol=[]):
@@ -405,15 +535,15 @@ def strate1():
     return_data = st.select_date_range(stock_data, start_date = pd.to_datetime('20060101'), trading_days=250)
     return_data['capital'] = (return_data['capital_rtn'] + 1).cumprod()
     # =====根据策略结果,计算评价指标
-    # 计算最近250天的股票,策略累计涨跌幅.以及每年（月，周）股票和策略收益
-    st.period_return(return_data, days=250, if_print=True)
-    # 根据每次买卖的结果,计算相关指标
-    st.trade_describe(stock_data)
     # =====根据资金曲线,计算相关评价指标
     st.strategyperformance(return_data)
-    #a["accumulative"]=1+a["capital_rtn"].cumsum()
+    # 根据每次买卖的结果,计算相关指标
+    st.trade_describe(stock_data)
+    # 计算最近250天的股票,策略累计涨跌幅.以及每年（月，周）股票和策略收益
+    st.period_return(return_data, days=250, if_print=True)
+    a["accumulative"]=1+a["capital_rtn"].cumsum()
     #a.plot(x="date",y="accumulative",kind='line')
-    #a.plot(x="date", y="capital", kind='line')
-    #plt.savefig("capital_rtn.png")
+    a.plot(x="date", y="capital", kind='line')
+    plt.savefig("capital_rtn.png")
 #     plt.show()  
     
