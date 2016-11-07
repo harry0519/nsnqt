@@ -492,7 +492,7 @@ class strate():
 
         #alph = self.alpha(date_line, capital_line, index_line, return_line, indexreturn_line)
 
-        strategyperf = '\n== == == == == == == == == == 策略回归测试报告 == == == == == == == == == == == ='
+        strategyperf = '\n==============策略回归测试报告=============='
         strategyperf = strategyperf + '\n收益       基准收益          最大回撤率'
         strategyperf = strategyperf + '\n' + str(Decimal(return_data.iat[return_data_len-1, 16]-1).quantize(Decimal('0.0000'))) + '        '+str(self.total_return(date_line, stock_line))+'          ' + str(capital_maxdd)
         strategyperf = strategyperf + '\n夏普比率   信息比率          收益波动率'
