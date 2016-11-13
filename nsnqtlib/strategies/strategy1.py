@@ -498,7 +498,6 @@ class strate():
         date_line = list(benchmark["date"]) # 日期序列`
 
         capital_line = list(stockdata['capital'])
-#         stock_line = list(return_data['close'])
         return_line = list(stockdata['capital_rtn'])  # 收益率序列
         indexreturn_line = list(benchmark['change'])  # 指数的变化率序列
         index_line = list(benchmark['close'])  # 指数序列
@@ -506,28 +505,18 @@ class strate():
 
         benchmarkretun = self.total_return(date_line, index_line)
         strategyreturn = self.total_return(date_line, capital_line)
-        print("benchmarkreturn:")
-        print(benchmarkretun)
-        #print(capital_line)
 
         capital_maxdrawdown, capital_maxdd =self.max_drawdown(date_line, capital_line)
-        #stock_maxdrawdown, stock_maxdd = self.max_drawdown(date_line, stock_line)
         capital_maxdd = Decimal(capital_maxdd).quantize(Decimal('0.0000'))
-        print(capital_maxdd)
 
         sharpe_rate = self.sharpe_ratio(date_line, capital_line, return_line)
         sharpe_rate = Decimal(sharpe_rate).quantize(Decimal('0.0000'))
-        print(sharpe_rate)
 
         info = self.info_ratio(date_line, return_line, indexreturn_line)
         info = Decimal(info).quantize(Decimal('0.0000'))
-        print(info)
 
         volati = self.volatility(date_line, return_line)
         volati = Decimal(volati).quantize(Decimal('0.0000'))
-        print(volati)
-
-        #alph = self.alpha(date_line, capital_line, index_line, return_line, indexreturn_line)
 
         strategyperf = '\n==============策略回归测试报告=============='
         strategyperf = strategyperf + '\n收益       基准收益          最大回撤率'
@@ -570,13 +559,10 @@ def strate1():
     a = st.account(stock_data)
     # 选取时间段
     return_data = st.select_date_range(stock_data, start_date = pd.to_datetime('20060101'), trading_days=250)
-    st.strategyperformance(return_data)
-#     return
-    
-    #return_data['capital'] = (return_data['capital_rtn'] + 1).cumprod()
+
     # =====根据策略结果,计算评价指标
     # =====根据资金曲线,计算相关评价指标
-    #st.strategyperformance(return_data)
+    st.strategyperformance(return_data)
     # 根据每次买卖的结果,计算相关指标
     st.trade_describe(stock_data)
     return_data.to_csv('return_data1411.csv')
