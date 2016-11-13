@@ -469,12 +469,31 @@ class strate():
         return 
 
     def strategyperformance(self,return_data):
-        date_line = list(return_data['date'])
+
+        benchmark = self.import_data('150023.SZ', '2010-01-01', '2016-10-08')
+        date = pd.date_range('2010-01-01', '2016-09-08')  # 生成日期序列
+
+        # 选取在日期范围内的股票数据序列并按日期排序
+        return_data = return_data.ix[return_data['date'].isin(date), ['date', 'capital_rtn', 'capital']]
+        return_data.sort_values(by='date', inplace=True)
+        return_data.set_index('date', inplace=True)
+
+        date_list = list(return_data.index.strftime('%Y-%m-%d'))
+
+        benchmark = benchmark.ix[benchmark['date'].isin(date_list), ['date', 'change', 'close']]
+        benchmark.sort_values(by='date', inplace=True)
+        benchmark.set_index('date', inplace=True)
+
+        #benchmark.to_csv('benchmark1211.csv')
+
+        # 将回测要用到的各个数据序列转成list格式
+        date_line = list(benchmark.index.strftime('%Y-%m-%d'))  # 日期序列
+
         capital_line = list(return_data['capital'])
-        stock_line = list(return_data['close'])
+        #stock_line = list(return_data['close'])
         return_line = list(return_data['capital_rtn'])  # 收益率序列
-        indexreturn_line = list(return_data['change'])  # 指数的变化率序列
-        #index_line = list(benchmark['close'])  # 指数序列
+        indexreturn_line = list(benchmark['change'])  # 指数的变化率序列
+        index_line = list(benchmark['close'])  # 指数序列
         return_data_len = len(return_data.index)
 
         capital_maxdrawdown, capital_maxdd =self.max_drawdown(date_line, capital_line)
