@@ -316,10 +316,10 @@ class strate():
         #  计算最大回撤和结束时间
         temp = df.sort_values(by='dd2here').iloc[0][['date', 'dd2here']]
         max_dd = temp['dd2here']
-        end_date = temp['date'].strftime('%Y-%m-%d')
+        end_date = temp['date']
         # 计算开始时间
         df = df[df['date'] <= end_date]
-        start_date = df.sort_values(by='capital', ascending=False).iloc[0]['date'].strftime('%Y-%m-%d')
+        start_date = df.sort_values(by='capital', ascending=False).iloc[0]['date']
     
         maxdrawdown = '\n最大回撤为：' + str(max_dd) + '开始日期：'+str(start_date)+ '结束日期：'+ str(end_date) 
         return maxdrawdown, max_dd
@@ -475,6 +475,7 @@ class strate():
         
         benchmark.set_index('date', inplace=True)
         benchmark["date"] = benchmark.index.strftime('%Y-%m-%d')
+        print (benchmark)
 
         # 选取在日期范围内的股票数据序列并按日期排序
         return_data.set_index('date', inplace=True)
@@ -486,15 +487,14 @@ class strate():
 
         benchmark = benchmark.ix[benchmark['date'].isin(date_list), ['date', 'change', 'close']]
         benchmark.sort_values(by='date', inplace=True)
-        benchmark.set_index('date', inplace=True)
 
         #benchmark.to_csv('benchmark1211.csv')
 
         # 将回测要用到的各个数据序列转成list格式
-        date_line = list(benchmark.index.strftime('%Y-%m-%d'))  # 日期序列
+        date_line = list(benchmark["date"]) # 日期序列`
 
         capital_line = list(return_data['capital'])
-        #stock_line = list(return_data['close'])
+#         stock_line = list(return_data['close'])
         return_line = list(return_data['capital_rtn'])  # 收益率序列
         indexreturn_line = list(benchmark['change'])  # 指数的变化率序列
         index_line = list(benchmark['close'])  # 指数序列
