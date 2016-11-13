@@ -251,14 +251,14 @@ class strate():
         else: 
             max_successive_loss = 0
         #  输出账户交易各项指标
-        trade_result = '\n==============每笔交易收益率及同期股票涨跌幅==============='
-        trade_result = trade_result + '\n' + self.printdatframe(trade,['start_date', 'end_date', 'trade_return', 'stock_return'])
 #         str(trade[['start_date', 'end_date', 'trade_return', 'stock_return']])
-        trade_result = trade_result + '\n====================账户交易的各项指标====================='
+        trade_result = '\n====================账户交易的各项指标====================='
         trade_result = trade_result + '\n交易次数为：' + str(trade_num) + '   最长持有天数为：' + str(max_holdtime)
         trade_result = trade_result + '\n每次平均涨幅为：' + str(average_change)
         trade_result = trade_result + '\n单次最大盈利为：' + str(max_gain) + '  单次最大亏损为：'+ str(max_loss)
         trade_result = trade_result+ '\n' + self.printdatframe(trade,[i for i in trade])
+        trade_result = trade_result +'\n==============每笔交易收益率及同期股票涨跌幅==============='
+        trade_result = trade_result + '\n' + self.printdatframe(trade,['start_date', 'end_date', 'trade_return', 'stock_return'])
         print(trade_result)
         self.save_data_to_csv('traderesult.txt',trade_result,1)
         return trade    
