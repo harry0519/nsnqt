@@ -469,21 +469,25 @@ class strate():
         return 
 
     def strategyperformance(self,return_data):
+        #return_data.to_csv('return_data1311.csv')
+        stockdata = return_data
 
         benchmark = self.import_data('150023.SZ', '2010-01-01', '2016-10-08')
         date = [i.strftime('%Y-%m-%d') for i in pd.date_range('2010-01-01', '2016-09-08')]  # 生成日期序列
-        
+
         benchmark.set_index('date', inplace=True)
         benchmark["date"] = benchmark.index.strftime('%Y-%m-%d')
-        print (benchmark)
+        #print (benchmark)
 
         # 选取在日期范围内的股票数据序列并按日期排序
-        return_data.set_index('date', inplace=True)
-        return_data["date"] = return_data.index.strftime('%Y-%m-%d')
-        return_data = return_data.ix[return_data['date'].isin(date), ['date', 'capital_rtn', 'capital']]
-        print (return_data)
+        stockdata.set_index('date', inplace=True)
+        stockdata["newdate"] = stockdata.index.strftime('%Y-%m-%d')
+        stockdata = stockdata.ix[stockdata['newdate'].isin(date), ['newdate', 'capital_rtn', 'capital']]
+        stockdata['capital'] = (stockdata['capital_rtn'] + 1).cumprod()
+        #stockdata.to_csv('return_data1411.csv')
+        #print (return_data)
 
-        date_list = list(return_data.index.strftime('%Y-%m-%d'))
+        date_list = list(stockdata.index.strftime('%Y-%m-%d'))
 
         benchmark = benchmark.ix[benchmark['date'].isin(date_list), ['date', 'change', 'close']]
         benchmark.sort_values(by='date', inplace=True)
@@ -493,31 +497,41 @@ class strate():
         # 将回测要用到的各个数据序列转成list格式
         date_line = list(benchmark["date"]) # 日期序列`
 
-        capital_line = list(return_data['capital'])
+        capital_line = list(stockdata['capital'])
 #         stock_line = list(return_data['close'])
-        return_line = list(return_data['capital_rtn'])  # 收益率序列
+        return_line = list(stockdata['capital_rtn'])  # 收益率序列
         indexreturn_line = list(benchmark['change'])  # 指数的变化率序列
         index_line = list(benchmark['close'])  # 指数序列
-        return_data_len = len(return_data.index)
+        return_data_len = len(stockdata.index)
+
+        benchmarkretun = self.total_return(date_line, index_line)
+        strategyreturn = self.total_return(date_line, capital_line)
+        print("benchmarkreturn:")
+        print(benchmarkretun)
+        #print(capital_line)
 
         capital_maxdrawdown, capital_maxdd =self.max_drawdown(date_line, capital_line)
-        stock_maxdrawdown, stock_maxdd = self.max_drawdown(date_line, stock_line)
+        #stock_maxdrawdown, stock_maxdd = self.max_drawdown(date_line, stock_line)
         capital_maxdd = Decimal(capital_maxdd).quantize(Decimal('0.0000'))
+        print(capital_maxdd)
 
         sharpe_rate = self.sharpe_ratio(date_line, capital_line, return_line)
         sharpe_rate = Decimal(sharpe_rate).quantize(Decimal('0.0000'))
+        print(sharpe_rate)
 
         info = self.info_ratio(date_line, return_line, indexreturn_line)
         info = Decimal(info).quantize(Decimal('0.0000'))
+        print(info)
 
         volati = self.volatility(date_line, return_line)
         volati = Decimal(volati).quantize(Decimal('0.0000'))
+        print(volati)
 
         #alph = self.alpha(date_line, capital_line, index_line, return_line, indexreturn_line)
 
         strategyperf = '\n==============策略回归测试报告=============='
         strategyperf = strategyperf + '\n收益       基准收益          最大回撤率'
-        strategyperf = strategyperf + '\n' + str(Decimal(return_data.iat[return_data_len-1, 16]-1).quantize(Decimal('0.0000'))) + '        '+str(self.total_return(date_line, stock_line))+'          ' + str(capital_maxdd)
+        strategyperf = strategyperf + '\n' + str(strategyreturn) + '        '+str(benchmarkretun)+'          ' + str(capital_maxdd)
         strategyperf = strategyperf + '\n夏普比率   信息比率          收益波动率'
         strategyperf = strategyperf + '\n' + str(sharpe_rate)  + '        '+str(info) + '          '+str(volati)
         #strategyperf = strategyperf + '\nalpha          beta'
@@ -559,14 +573,15 @@ def strate1():
     st.strategyperformance(return_data)
 #     return
     
-    return_data['capital'] = (return_data['capital_rtn'] + 1).cumprod()
+    #return_data['capital'] = (return_data['capital_rtn'] + 1).cumprod()
     # =====根据策略结果,计算评价指标
     # =====根据资金曲线,计算相关评价指标
-    st.strategyperformance(return_data)
+    #st.strategyperformance(return_data)
     # 根据每次买卖的结果,计算相关指标
     st.trade_describe(stock_data)
+    return_data.to_csv('return_data1411.csv')
     # 计算最近250天的股票,策略累计涨跌幅.以及每年（月，周）股票和策略收益
-    st.period_return(return_data, days=250, if_print=True)
+    #st.period_return(return_data, days=250, if_print=True)
     a["accumulative"]=1+a["capital_rtn"].cumsum()
     #a.plot(x="date",y="accumulative",kind='line')
     a.plot(x="date", y="capital", kind='line')
