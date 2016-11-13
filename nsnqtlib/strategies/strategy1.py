@@ -471,12 +471,16 @@ class strate():
     def strategyperformance(self,return_data):
 
         benchmark = self.import_data('150023.SZ', '2010-01-01', '2016-10-08')
-        date = pd.date_range('2010-01-01', '2016-09-08')  # 生成日期序列
+        date = [i.strftime('%Y-%m-%d') for i in pd.date_range('2010-01-01', '2016-09-08')]  # 生成日期序列
+        
+        benchmark.set_index('date', inplace=True)
+        benchmark["date"] = benchmark.index.strftime('%Y-%m-%d')
 
         # 选取在日期范围内的股票数据序列并按日期排序
-        return_data = return_data.ix[return_data['date'].isin(date), ['date', 'capital_rtn', 'capital']]
-        return_data.sort_values(by='date', inplace=True)
         return_data.set_index('date', inplace=True)
+        return_data["date"] = return_data.index.strftime('%Y-%m-%d')
+        return_data = return_data.ix[return_data['date'].isin(date), ['date', 'capital_rtn', 'capital']]
+        print (return_data)
 
         date_list = list(return_data.index.strftime('%Y-%m-%d'))
 
@@ -552,6 +556,9 @@ def strate1():
     a = st.account(stock_data)
     # 选取时间段
     return_data = st.select_date_range(stock_data, start_date = pd.to_datetime('20060101'), trading_days=250)
+    st.strategyperformance(return_data)
+#     return
+    
     return_data['capital'] = (return_data['capital_rtn'] + 1).cumprod()
     # =====根据策略结果,计算评价指标
     # =====根据资金曲线,计算相关评价指标
@@ -565,4 +572,7 @@ def strate1():
     a.plot(x="date", y="capital", kind='line')
     plt.savefig("capital_rtn.png")
 #     plt.show()  
-    
+
+
+# if __name__ == '__main__':
+#     strate1()   
