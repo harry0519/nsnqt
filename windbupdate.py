@@ -5,6 +5,7 @@ import sys
 from nsnqtlib.servers import serverlist
 from nsnqtlib.db import mongodb
 from nsnqtlib.utils import WindQuote
+from nsnqtlib.db.fields import *
 
 class windbupdate():
     def __init__(self):
@@ -18,7 +19,20 @@ class windbupdate():
     def update_fund(self,args):
         print("fund updated")
     def update_index(self,args):
-        print("index updated")
+        print("start to update index")
+        local_wnd = WindQuote.WndQuery()
+        local_wnd.connect()
+        regular_fields = local_wnd.get_par_string(par_list_stock)
+
+        sh000001 = local_wnd.get_history_data("000001.SH",regular_fields, "1990-12-19")
+        sz399001 = local_wnd.get_history_data("399001.SZ",regular_fields, "1991-04-03")
+
+        local_db = mongodb.MongoDB()
+        local_db.connect()
+        local_db.save_data("mlindex","000001",par_list_stock,sh000001)
+        local_db.save_data("mlindex","399001",par_list_stock,sz399001)
+        print("update index done")
+        
     def update_currency(self,args):
         print("currency updated")
     def update_general(self,args):
@@ -129,10 +143,11 @@ class windbupdate():
     
 if __name__ == '__main__':
     wind = windbupdate()
-    args = wind.parseargs()
-    print(args)
-    for item in args.action:
-        wind.action(item,args)
+    wind.update_index("")   
+#    args = wind.parseargs()
+#    print(args)
+#    for item in args.action:
+#        wind.action(item,args)
     
        
     

@@ -6,14 +6,15 @@ from pymongo import MongoClient
 import pandas as pd
 import nsnqtlib.db.fields
 from nsnqtlib.db.base  import BaseDB
+from nsnqtlib.servers.serverlist import LOCAL_SERVER_IP,MONGODB_PORT_DEFAULT
 from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
  
 class MongoDB(BaseDB):
-    def __init__(self,ip=DB_SERVER, 
-                     port=DB_PORT, 
-                     user_name=USER, 
-                     pwd=PWD,
-                     authdb=AUTHDBNAME):
+    def __init__(self,ip=LOCAL_SERVER_IP, 
+                     port=MONGODB_PORT_DEFAULT, 
+                     user_name=None, 
+                     pwd=None,
+                     authdb=None):
         self.__server_ip = ip
         self.__server_port = port
         self.__user_name = user_name
@@ -58,7 +59,26 @@ class MongoDB(BaseDB):
         return True
 
 
-    def save_data(self, db_name, table_name, dataset, fields):
+    def save_data(self, db_name, collection,fields,data_set):
+        print("===Start to save data to mongodb===")
+        
+        db = eval("self.client.{}".format(db_name))        
+         
+        for j in range(len(data_set.Data[0])):
+            table_set = db[collection]
+            table_set.update_one({"date":data_set.Times[j]},
+                {"$set":{ 
+                    "pre_close":data_set.Data[0][j],
+                    "open":data_set.Data[1][j],
+                    "high":data_set.Data[2][j],
+                    "low":data_set.Data[3][j],
+                    "close":data_set.Data[4][j],
+                    "volume":data_set.Data[5][j],
+                    "amt":data_set.Data[6][j],
+                    "dealnum":data_set.Data[7][j]}}, upsert=True)   
+         
+        print("data have been saved to mongodb")
+       
         return True
 
 #     def save_future_data_to_mdb(self,data_set,table_map,table_name):
