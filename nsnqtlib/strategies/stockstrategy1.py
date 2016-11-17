@@ -5,8 +5,6 @@ import time
 import datetime
 import sys
 import pandas as pd
-DATES = []
-HOLDS=[]
 
 class strategy1(object):
     '''
@@ -124,29 +122,34 @@ class strategy1(object):
             count +=1
         return origindata   
             
+    def filter_with_all_stocks(self,stocklist):
+        error_list = []
+        result = [] 
+        for i in stocklist:
+            try:
+                r = self.histofyreturn(table=i) 
+                if r:result.extend(r)
+            except:
+                error_list.append(i)
+        return result,error_list
 
-result = []            
-stop=0
-s=strategy1()
-stocklist = s.m.getallcollections("ml_security_table")
+
+if __name__ == '__main__':
+    s=strategy1()
+    stocklist = s.m.getallcollections("ml_security_table")
+    result,errorlist = s.filter_with_all_stocks(stocklist)
 # s.his1tofyreturn(table="600455.SH")
-
-for i in stocklist:
-#     print (i)  
-    try:
-        r = s.histofyreturn(table=i)
-        if r:result.extend(r)
-    except:
-        pass
+# for i in stocklist:
+# #     print (i)  
+#     try:
+#         r = s.histofyreturn(table=i)
+#         if r:result.extend(r)
+#     except:
+#         pass
 #     if stop >=100:
 #         print (result)
-df = pd.DataFrame(result,columns=["stock","buy_date","sell_date","holddays","profit"])
-df.to_csv("test1.csv")
-#         sys.exit()
-    
-# 
-# print (len(set(DATES)))
-# print (sum(HOLDS)/len(HOLDS))
+    df = pd.DataFrame(result,columns=["stock","buy_date","sell_date","holddays","profit"])
+    df.to_csv("test1.csv")
 
 
 

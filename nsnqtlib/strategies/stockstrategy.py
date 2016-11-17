@@ -38,7 +38,6 @@ class strategy1(object):
                     if (line[3]-h[1])/h[1]>=0.1:
 #                         print (count-h[0])
                         print (0.1)
-                        RESULTS.append(0.1)
                         holding.remove(h)
                         HOLDS.append(count-h[0])
                     elif (line[3]-h[1])/h[1]<=-0.10 or count-h[0] > 20:
