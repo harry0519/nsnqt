@@ -5,14 +5,16 @@ import time
 import datetime
 import sys
 import pandas as pd
+import tushare as ts
+from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
 
 class strategy1(object):
     '''
     trading volume is the lowest in 60 days
     '''
     def __init__(self,stock="600455.SH"):
-        self.m = MongoDB()
-    
+        self.m = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
+        
     def _getdata(self,db="ml_security_table",collection="600455.SH"):   
         query = self.m.read_data(db,collection,filt={"date":{"$gt": datetime.datetime(2013, 1, 1, 0, 0, 0,0)}})
         return self.m.format2dataframe(query)
@@ -73,15 +75,25 @@ class strategy1(object):
             return True
         return False
     
-    def histofyreturn(self,db="ml_security_table",table=""):
+    def formatdata(self,stock,source="mongodb"):
+        if source == "mongodb":
+            df = self._getdata(collection=stock)
+        elif source == "tushare":
+            df = ts.get_hist_data(stock,start='2016-08-01', end='2016-11-18',)
+            df.sort_index(inplace=True)
+            df["date"] = df.index
+            df["pre_close"] = df["close"]-df["price_change"]
+        return df
+    
+    def histofyreturn(self,db="ml_security_table",table="",source="mongodb"):
         buy = []
-        stopwin = 0.1
+        stopgain = 0.1
         stoploss = -0.1
         vol_day = 10
         price_day = 60
-        df = self._getdata(collection=table)
         count=60
-        origindata=[]
+        transaction_record=[]
+        df = self.formatdata(table,source)
         lst = [l for l in df[["date","volume","close","high","low","open","pre_close"]].fillna(0).values if l[1] !=0]
         for line in lst[count:]:
             vol = line[1]
@@ -109,48 +121,46 @@ class strategy1(object):
                     buy.remove(b)
                     
                     if selltype == "stopgain": 
-                        profit = stopwin
+                        profit = stopgain
                     elif selltype == "stopgain":
                         profit = stoploss
                     else: 
                         profit = (close-buy_price)/buy_price
-                    origindata.append([table,buy_date,sell_date,hold_days,profit])
+                    transaction_record.append([table,buy_date,sell_date,hold_days,profit])
                     print (profit)
             
             if self.buy_condition(vol,vol_data,close,last_high,maxprice,minprice,count,vol_weight=1.2):
-                buy.append((line,count))
+                buy.append((line,count,table))
             count +=1
-        return origindata   
+        return transaction_record,buy   
             
-    def filter_with_all_stocks(self,stocklist):
+    def filter_with_all_stocks(self,stocklist,source="mongodb"):
         error_list = []
         result = [] 
+        buyresult = []
         for i in stocklist:
+            print (i)
             try:
-                r = self.histofyreturn(table=i) 
+                r,buyed = self.histofyreturn(table=i,source=source) 
                 if r:result.extend(r)
+                if buyed:buyresult.extend(buyed)
             except:
                 error_list.append(i)
-        return result,error_list
-
+        return result,buyresult,error_list
+    
 
 if __name__ == '__main__':
     s=strategy1()
-    stocklist = s.m.getallcollections("ml_security_table")
-    result,errorlist = s.filter_with_all_stocks(stocklist)
-# s.his1tofyreturn(table="600455.SH")
-# for i in stocklist:
-# #     print (i)  
-#     try:
-#         r = s.histofyreturn(table=i)
-#         if r:result.extend(r)
-#     except:
-#         pass
-#     if stop >=100:
-#         print (result)
+#     stocklist = s.m.getallcollections("ml_security_table")
+#     result,buyed,errorlist = s.filter_with_all_stocks(stocklist)
+    
+    stocklist =  ts.get_stock_basics().index
+    result,buyed,errorlist = s.filter_with_all_stocks(stocklist,"tushare")
+    
     df = pd.DataFrame(result,columns=["stock","buy_date","sell_date","holddays","profit"])
-    df.to_csv("test1.csv")
-
+    df_buy = pd.DataFrame(buyed,columns=["date","buy_data","stock"])
+    df_buy.to_csv("test_tushare_buy.csv")
+    df.to_csv("test1_tushare.csv")
 
 
 
