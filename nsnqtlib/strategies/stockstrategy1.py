@@ -18,6 +18,12 @@ class strategy1(object):
     def _getdata(self,db="ml_security_table",collection="600455.SH"):   
         query = self.m.read_data(db,collection,filt={"date":{"$gt": datetime.datetime(2013, 1, 1, 0, 0, 0,0)}})
         return self.m.format2dataframe(query)
+
+    # 获取股票列表
+    def import_stocklist(self, stocklistname):
+        #df = pd.read_csv(str(stocklistname) + '.csv', parse_dates=['date'])
+        df = pd.read_csv(str(stocklistname) + '.csv', parse_dates=['code'])
+        return df
     
     def mean_volume(self,data):
         m_vol = sum(data)/len(data)
@@ -147,20 +153,25 @@ class strategy1(object):
             except:
                 error_list.append(i)
         return result,buyresult,error_list
-    
 
+
+print('111')
 if __name__ == '__main__':
     s=strategy1()
 #     stocklist = s.m.getallcollections("ml_security_table")
 #     result,buyed,errorlist = s.filter_with_all_stocks(stocklist)
     
-    stocklist =  ts.get_stock_basics().index
-    result,buyed,errorlist = s.filter_with_all_stocks(stocklist,"tushare")
+    #stocklist =  ts.get_stock_basics().index
+    df_stocklist = s.import_stocklist("convertiblebond")
+    print('1111')
+    stocklist = df_stocklist['code'].tolist()
+    print(stocklist)
+    #result,buyed,errorlist = s.filter_with_all_stocks(stocklist,"tushare")
     
-    df = pd.DataFrame(result,columns=["stock","buy_date","sell_date","holddays","profit"])
-    df_buy = pd.DataFrame(buyed,columns=["date","buy_data","stock"])
-    df_buy.to_csv("test_tushare_buy.csv")
-    df.to_csv("test1_tushare.csv")
+    #df = pd.DataFrame(result,columns=["stock","buy_date","sell_date","holddays","profit"])
+    #df_buy = pd.DataFrame(buyed,columns=["date","buy_data","stock"])
+    #df_buy.to_csv("test_tushare_buy.csv")
+    #df.to_csv("test1_tushare.csv")
 
 
 
