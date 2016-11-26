@@ -141,7 +141,8 @@ class strategy1(object):
                     if selltype == "stopgain": 
                         profit = stopgain
                     elif selltype == "stoploss":
-                        profit = stoploss
+#                         profit = stoploss
+                        profit = (close-buy_price)/buy_price
                     else: 
                         profit = (close-buy_price)/buy_price
                     transaction_record.append([table,buy_date,sell_date,hold_days,profit])
