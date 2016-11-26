@@ -109,7 +109,6 @@ class strategy1(object):
         lst = [l for l in df[["date","volume","close","high","low","open","pre_close"]].fillna(0).values if l[1] !=0]
         
         for line in lst[count:]:
-            print (line)
             vol = line[1]
             if vol == 0:continue
             close = line[2]
