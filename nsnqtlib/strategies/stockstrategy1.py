@@ -121,7 +121,7 @@ class strategy1(object):
             last_high = lst[count-1][3]
             vol_data = [i[1] for i in lst[count-vol_day:count]]
             maxprice = max([i[3]] for i in lst[count-price_day:count])[0]
-            maxindex = [ lst.index(i)for i in lst[count-price_day:count] if i[3] == maxprice][0]
+            maxindex = [ i for i in range(count-price_day,count) if lst[i][3] == maxprice][0]
             minprice = min([i[4]] for i in lst[count-price_day:count])[0]
             ex_right,ex_right_rate = self.is_ex_right(line[6],lst[count-1][2])
             
