@@ -107,7 +107,7 @@ class strategy1(object):
         buy = []
         stopgain = 0.1
         stoploss = -0.5
-        vol_day = 10
+        vol_day = 30
         price_day = 90
         count=90
         transaction_record=[]
