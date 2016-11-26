@@ -108,8 +108,8 @@ class strategy1(object):
         df = self.formatdata(table,source)
         lst = [l for l in df[["date","volume","close","high","low","open","pre_close"]].fillna(0).values if l[1] !=0]
         
-        
         for line in lst[count:]:
+            print (line)
             vol = line[1]
             if vol == 0:continue
             close = line[2]
@@ -117,7 +117,7 @@ class strategy1(object):
             vol_data = [i[1] for i in lst[count-vol_day:count]]
             maxprice = max([i[3]] for i in lst[count-price_day:count])[0]
             minprice = min([i[4]] for i in lst[count-price_day:count])[0]
-            ex_right,ex_right_rate = self.is_ex_right(line[6],lst[count-1[2]])
+#             ex_right,ex_right_rate = self.is_ex_right(line[6],lst[count-1[2]])
 #             if ex_right:
 #                 i[2:] =  for i in buy]
             for b in buy[:]:
