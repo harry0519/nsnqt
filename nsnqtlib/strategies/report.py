@@ -85,8 +85,8 @@ class report(object):
         plt.show()  
 
 if __name__ == '__main__':
-    df = pd.read_csv('test2_tushare.csv')
+    df = pd.read_csv('test1_tushare.csv')
     r = report(df)
-    r.positiongain(start="2010-01-01",end="2016-11-26")
+    r.positiongain(start="2011-01-01",end="2016-11-18")
     
     

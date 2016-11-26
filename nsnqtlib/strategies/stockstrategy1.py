@@ -123,12 +123,9 @@ class strategy1(object):
             maxprice = max([i[3]] for i in lst[count-price_day:count])[0]
             maxindex = [ i for i in range(count-price_day,count) if lst[i][3] == maxprice][0]
             minprice = min([i[4]] for i in lst[count-price_day:count])[0]
-            ex_right,ex_right_rate = self.is_ex_right(line[6],lst[count-1][2])
-            
-            if ex_right:
-                for i in range(len(buy)):
-                    for j in range(2,6):
-                        buy[i][j] =  buy[i][j]*ex_right_rate
+            ex_right,ex_right_rate = self.is_ex_right(line[6],lst[count-1[2]])
+#             if ex_right:
+#                 i[2:] =  for i in buy]
             for b in buy[:]:
                 d=b[0]
                 c=b[1]
@@ -157,6 +154,7 @@ class strategy1(object):
             
             if self.buy_condition(vol,vol_data,close,last_high,maxprice,minprice,count,maxindex,vol_weight=1.2):
                 buy.append((line,count,table))
+                print (line)
             count +=1
         return transaction_record,buy   
             
