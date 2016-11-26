@@ -29,11 +29,12 @@ class strategy1(object):
         m_vol = sum(data)/len(data)
         return m_vol
     
-    def buy_condition(self,vol,vol_data,close,last_high,maxprice,minprice,count,vol_weight=1.2):
+    def buy_condition(self,vol,vol_data,close,last_high,maxprice,minprice,count,highindex,vol_weight=1.2):
         if  self.condition1(vol,vol_data,vol_weight) and \
             self.condition2(close,last_high) and \
             self.condition3(close,maxprice) and \
-            self.condition4(close,minprice): 
+            self.condition4(close,minprice) and \
+            self.condition5(count,highindex): 
             return True
         return False
     
@@ -81,6 +82,11 @@ class strategy1(object):
             return True
         return False
     
+    def condition5(self,currentday,highday,grads=60):
+        if currentday - highday  >= grads:
+            return True
+        return False
+    
     def formatdata(self,stock,source="mongodb"):
         if source == "mongodb":
             df = self._getdata(collection=stock)
@@ -102,8 +108,8 @@ class strategy1(object):
         stopgain = 0.1
         stoploss = -0.5
         vol_day = 10
-        price_day = 60
-        count=60
+        price_day = 90
+        count=90
         transaction_record=[]
         df = self.formatdata(table,source)
         lst = [l for l in df[["date","volume","close","high","low","open","pre_close"]].fillna(0).values if l[1] !=0]
@@ -115,6 +121,7 @@ class strategy1(object):
             last_high = lst[count-1][3]
             vol_data = [i[1] for i in lst[count-vol_day:count]]
             maxprice = max([i[3]] for i in lst[count-price_day:count])[0]
+            maxindex = [ lst.index(i)for i in lst[count-price_day:count] if i[3] == maxprice][0]
             minprice = min([i[4]] for i in lst[count-price_day:count])[0]
             ex_right,ex_right_rate = self.is_ex_right(line[6],lst[count-1][2])
             
@@ -148,7 +155,7 @@ class strategy1(object):
                     transaction_record.append([table,buy_date,sell_date,hold_days,profit])
                     print (profit)
             
-            if self.buy_condition(vol,vol_data,close,last_high,maxprice,minprice,count,vol_weight=1.2):
+            if self.buy_condition(vol,vol_data,close,last_high,maxprice,minprice,count,maxindex,vol_weight=1.2):
                 buy.append((line,count,table))
             count +=1
         return transaction_record,buy   
