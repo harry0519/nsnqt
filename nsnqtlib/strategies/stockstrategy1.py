@@ -100,7 +100,7 @@ class strategy1(object):
     def histofyreturn(self,db="ml_security_table",table="",source="mongodb"):
         buy = []
         stopgain = 0.1
-        stoploss = -0.1
+        stoploss = -0.5
         vol_day = 10
         price_day = 60
         count=60
@@ -140,7 +140,7 @@ class strategy1(object):
                     
                     if selltype == "stopgain": 
                         profit = stopgain
-                    elif selltype == "stopgain":
+                    elif selltype == "stoploss":
                         profit = stoploss
                     else: 
                         profit = (close-buy_price)/buy_price
