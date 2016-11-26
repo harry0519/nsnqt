@@ -16,7 +16,7 @@ class strategy1(object):
         self.m = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
         
     def _getdata(self,db="ml_security_table",collection="600455.SH"):   
-        query = self.m.read_data(db,collection,filt={"date":{"$gt": datetime.datetime(2013, 1, 1, 0, 0, 0,0)}})
+        query = self.m.read_data(db,collection,filt={"date":{"$gt": datetime.datetime(2011, 1, 1, 0, 0, 0,0)}})
         return self.m.format2dataframe(query)
 
     # 获取股票列表
@@ -91,6 +91,12 @@ class strategy1(object):
             df["pre_close"] = df["close"]-df["price_change"]
         return df
     
+    def is_ex_right(self,currentprice,lastprice):
+        if currentprice != lastprice:
+            return True,currentprice/lastprice
+        else:
+            return False,1.0
+        
     def histofyreturn(self,db="ml_security_table",table="",source="mongodb"):
         buy = []
         stopgain = 0.1
@@ -101,6 +107,8 @@ class strategy1(object):
         transaction_record=[]
         df = self.formatdata(table,source)
         lst = [l for l in df[["date","volume","close","high","low","open","pre_close"]].fillna(0).values if l[1] !=0]
+        
+        
         for line in lst[count:]:
             vol = line[1]
             if vol == 0:continue
@@ -109,7 +117,9 @@ class strategy1(object):
             vol_data = [i[1] for i in lst[count-vol_day:count]]
             maxprice = max([i[3]] for i in lst[count-price_day:count])[0]
             minprice = min([i[4]] for i in lst[count-price_day:count])[0]
-            
+            ex_right,ex_right_rate = self.is_ex_right(line[6],lst[count-1[2]])
+#             if ex_right:
+#                 i[2:] =  for i in buy]
             for b in buy[:]:
                 d=b[0]
                 c=b[1]
@@ -137,6 +147,7 @@ class strategy1(object):
             
             if self.buy_condition(vol,vol_data,close,last_high,maxprice,minprice,count,vol_weight=1.2):
                 buy.append((line,count,table))
+                print (line)
             count +=1
         return transaction_record,buy   
             
@@ -155,23 +166,18 @@ class strategy1(object):
         return result,buyresult,error_list
 
 
-print('111')
 if __name__ == '__main__':
     s=strategy1()
-#     stocklist = s.m.getallcollections("ml_security_table")
-#     result,buyed,errorlist = s.filter_with_all_stocks(stocklist)
+    stocklist = s.m.getallcollections("ml_security_table")
+    result,buyed,errorlist = s.filter_with_all_stocks(stocklist)
     
-    #stocklist =  ts.get_stock_basics().index
-    df_stocklist = s.import_stocklist("convertiblebond")
-    print('1111')
-    stocklist = df_stocklist['code'].tolist()
-    print(stocklist)
-    #result,buyed,errorlist = s.filter_with_all_stocks(stocklist,"tushare")
+#     stocklist =  ts.get_stock_basics().index
+#     result,buyed,errorlist = s.filter_with_all_stocks(stocklist,"tushare")
     
-    #df = pd.DataFrame(result,columns=["stock","buy_date","sell_date","holddays","profit"])
-    #df_buy = pd.DataFrame(buyed,columns=["date","buy_data","stock"])
-    #df_buy.to_csv("test_tushare_buy.csv")
-    #df.to_csv("test1_tushare.csv")
+    df = pd.DataFrame(result,columns=["stock","buy_date","sell_date","holddays","profit"])
+    df_buy = pd.DataFrame(buyed,columns=["date","buy_data","stock"])
+    df_buy.to_csv("test2_tushare_buy.csv")
+    df.to_csv("test2_tushare.csv")
 
 
 

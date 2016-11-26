@@ -41,9 +41,9 @@ class MongoDB(BaseDB):
         out:the fields you want to convert into dataframe 
         '''
         if not out:
-            query = [i for i in query]
+            query = [i for i in query.sort("date", 1)]
         else:
-            query = [{k:i[k] for k in out} for i in query]
+            query = [{k:i[k] for k in out} for i in query.sort("date", 1)]
         return pd.DataFrame(query)
     
     def connect(self):

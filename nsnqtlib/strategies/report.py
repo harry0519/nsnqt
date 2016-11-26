@@ -27,7 +27,7 @@ class report(object):
             rst = s
         return rst
     
-    def positiongain(self,start="2013-03-01",end="2016-11-18"):
+    def positiongain(self,start="2011-01-01",end="2016-11-18"):
         totalmoney = 100
         leftmoney = 100
         holds = []
@@ -85,8 +85,8 @@ class report(object):
         plt.show()  
 
 if __name__ == '__main__':
-    df = pd.read_csv('test_tushare.csv')
+    df = pd.read_csv('test1_tushare.csv')
     r = report(df)
-    r.positiongain(start="2013-03-01",end="2016-11-18")
+    r.positiongain(start="2011-01-01",end="2016-11-18")
     
     
