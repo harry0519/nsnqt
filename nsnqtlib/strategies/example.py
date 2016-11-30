@@ -23,6 +23,7 @@ class examplestock(basestrategy):
 #         low = lst[count][4]
 #         open = lst[count][5]
 #         pre_close = lst[count][6]
+        if count <= 60:return False
         vol_data = [i[1] for i in lst[count-vol_day:count]]
         maxprice = max([i[3]] for i in lst[count-price_day:count])[0]
         minprice = min([i[4]] for i in lst[count-price_day:count])[0]
@@ -105,4 +106,16 @@ class examplestock(basestrategy):
         return False
     
 if __name__ == '__main__':
-    pass
+    s = examplestock()
+    s.setlooplist()
+    s.looplist_historyreturn()
+    
+
+
+
+
+
+
+
+
+

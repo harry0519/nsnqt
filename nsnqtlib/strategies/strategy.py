@@ -51,7 +51,7 @@ class basestrategy(object):
     def sell(self,line,count,holding_record):
         traderecord = []
         buyrecord = []
-        return False,traderecord,buyrecord
+        return False,traderecord
     
     def historyreturn(self,collection):
         trading_record = []
@@ -63,10 +63,11 @@ class basestrategy(object):
             isbuy = self.buy(lst,count)
             
             for b in holding_record[:]:
-                issell,traderecord,selledbuyrecord = self.sell(lst,count,b)
+                issell,traderecord = self.sell(lst,count,b)
                 if issell:
-                    holding_record.remove(selledbuyrecord)
+                    holding_record.remove(b)
                     trading_record.append(traderecord)
+                    print (traderecord)
             
             if isbuy:
                 holding_record.append((line,count,collection))
