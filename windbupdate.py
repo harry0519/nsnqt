@@ -6,6 +6,8 @@ from nsnqtlib.servers import serverlist
 from nsnqtlib.db import mongodb
 from nsnqtlib.utils import WindQuote
 from nsnqtlib.db.fields import *
+from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
+from nsnqtlib.servers.serverlist import LOCAL_SERVER_IP,MONGODB_PORT_DEFAULT
 
 class windbupdate():
     def __init__(self):
@@ -13,14 +15,26 @@ class windbupdate():
 
     #process action to get data for different market
     def update_security(self,args):
-        print("security updated")
+        local_wnd = WindQuote.WndQuery()        
+        local_wnd.connect()
+        regular_fields = local_wnd.get_par_string(par_list_stock)
+
+        sh600611 = local_wnd.get_history_data("600611.SH",regular_fields, "1992-08-12") 
+
+        local_db = mongodb.MongoDB(LOCAL_SERVER_IP,MONGODB_PORT_DEFAULT,None,None,None)
+        ali_db   = mongodb.MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
+        
+        local_db.save_data("ml_security_table","600611",par_list_stock,sh600611)
+        ali_db.save_data("ml_security_table","600611",par_list_stock,sh600611)
+        
+
     def update_future(self,args):
         print("future updated")
     def update_fund(self,args):
         print("fund updated")
     def update_index(self,args):
         print("start to update index")
-        local_wnd = WindQuote.WndQuery()
+        local_wnd = WindQuote.WndQuery()        
         local_wnd.connect()
         regular_fields = local_wnd.get_par_string(par_list_stock)
 
@@ -28,9 +42,12 @@ class windbupdate():
         sz399001 = local_wnd.get_history_data("399001.SZ",regular_fields, "1991-04-03")
 
         local_db = mongodb.MongoDB()
-        local_db.connect()
+        ali_db   = mongodb.MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
+
         local_db.save_data("mlindex","000001",par_list_stock,sh000001)
         local_db.save_data("mlindex","399001",par_list_stock,sz399001)
+        ali_db.save_data("mlindex","399001",par_list_stock,sz399001)
+        
         print("update index done")
         
     def update_currency(self,args):
@@ -143,7 +160,7 @@ class windbupdate():
     
 if __name__ == '__main__':
     wind = windbupdate()
-    wind.update_index("")   
+    wind.update_security("")   
 #    args = wind.parseargs()
 #    print(args)
 #    for item in args.action:

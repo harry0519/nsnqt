@@ -8,7 +8,10 @@ import nsnqtlib.db.fields
 from nsnqtlib.db.base  import BaseDB
 from nsnqtlib.servers.serverlist import LOCAL_SERVER_IP,MONGODB_PORT_DEFAULT
 from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
- 
+import sys
+import time
+from time import clock
+
 class MongoDB(BaseDB):
     def __init__(self,ip=LOCAL_SERVER_IP, 
                      port=MONGODB_PORT_DEFAULT, 
@@ -59,13 +62,20 @@ class MongoDB(BaseDB):
         return True
 
 
-    def save_data(self, db_name, collection,fields,data_set):
-        print("===Start to save data to mongodb===")
+    def save_data(self, db_name, collection,fields,data_set,show_progress=False):        
+        #print("===Saving %s to %s @%s===" %(collection,db_name,self.__server_ip))
         
-        db = eval("self.client.{}".format(db_name))        
-         
-        for j in range(len(data_set.Data[0])):
+        db = eval("self.client.{}".format(db_name))
+        record_num = len(data_set.Data[0])
+
+        if show_progress:
+            start = clock()  
+            sys.stdout.write("Writing %s: %d/%d \r" %(collection,0,record_num))
+
+        for j in range(record_num):
             table_set = db[collection]
+            if show_progress and j % 10 == 0:
+                sys.stdout.write("Writing %s: %d/%d \r" %(collection,j,record_num))
             table_set.update_one({"date":data_set.Times[j]},
                 {"$set":{ 
                     "pre_close":data_set.Data[0][j],
@@ -77,8 +87,9 @@ class MongoDB(BaseDB):
                     "amt":data_set.Data[6][j],
                     "dealnum":data_set.Data[7][j]}}, upsert=True)   
          
-        print("data have been saved to mongodb")
-       
+        if show_progress:
+            finish = clock()
+            print("\nUpload complete in %.2fs" %(finish-start))
         return True
 
 #     def save_future_data_to_mdb(self,data_set,table_map,table_name):

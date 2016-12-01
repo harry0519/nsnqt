@@ -32,15 +32,15 @@ class WndQuery(object):
         return par_string
     # query history data from wind
     # type: 1=stock, 2=future
-    def get_history_data(self,stock_code,fields,start_day,end_day=datetime.today()):    
-
-        print ("start to query data from wind")
-       
+    def get_history_data(self,stock_code,fields,start_day,end_day=datetime.today(),show_log=False):    
+        if show_log:
+            print ("[get_history_data] %s,%s,%s,%s" %(stock_code,fields,start_day,end_day))       
         
         wind_data = w.wsd(stock_code, fields, start_day, end_day, "TradingCalendar=CZCE")
 
-        print("Data query finished, %d record be found" %len(wind_data.Data[0]))
+        if show_log:
+            print("[get_history_data] ErrorCode=%d" %wind_data.ErrorCode)
         return wind_data
 
-#    def wset(self, view_name,sector_id):
-#        return w.wset(view_name,sector_id)
+    def wset(self, view_name,sector_id):
+        return w.wset(view_name,sector_id)
