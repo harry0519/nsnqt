@@ -194,7 +194,7 @@ class strategy1(object):
                     # print(transaction_record)
             if self.buy_condition(dat, vol, vol_data, close, last_high, maxprice, minprice, count, parameter,
                                   vol_weight=1.2):
-                buy.append(([i for i in line], count, table))
+                buy.append((line, count, table))
             count += 1
         # df_buy = pd.DataFrame(transaction_record)
         # df_buy.to_csv("test_tushare_buy_new.csv")
