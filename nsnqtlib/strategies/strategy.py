@@ -84,7 +84,7 @@ class basestrategy(object):
     def recount(self,lst,sc,ec,weight):
         rst = []
         for line in lst[sc:ec]:
-            rst.append([line[0],line[1]],*[i*weight for i in line [2:]])
+            rst.append([line[0],line[1],*[i*weight for i in line [2:]]])
         return rst    
     
     def historyreturn(self,collection):
