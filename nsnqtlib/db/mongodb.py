@@ -29,7 +29,12 @@ class MongoDB(BaseDB):
     def getallcollections(self,db="ml_security_table"):
         cls = [i for i in eval("self.client.{}".format(db)).collection_names()]
         return cls
-    
+
+    def dropcollection(self,collection,db="ml_security_table"):
+        print(collection)
+        db = eval("self.client.{}".format(db))
+        return db[collection].drop()
+
     def read_data(self,db,collection,filt={}): 
         '''
         colections:  collection in mongodb ,which your want to get data from

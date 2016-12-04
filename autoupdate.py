@@ -40,24 +40,25 @@ def update_all_stock():
     print("==========start to update all stocks==========")    
     for j in range(security_list_size):
         stock_name = security_list.Data[0][j]
-        stock_data = local_wnd.get_history_data(stock_name,regular_fields, "2016-11-28","2016-11-30")
+        if stock_name[0] == '0': #=='3' #=='6'
+            stock_data = local_wnd.get_history_data(stock_name,regular_fields, "2016-12-02","2016-12-02")
 
-        if stock_data.ErrorCode == 0:
-            local_db.save_data("ml_security_table",stock_name,par_list_stock,stock_data)
-            ali_db.save_data("ml_security_table",stock_name,par_list_stock,stock_data)      
-            success_count = success_count + 1
-            end = clock()
-            print("%s sucess:%d, %d[%d/%d],used %ds" %(stock_name, stock_data.ErrorCode,j,success_count,security_list_size,end-start))
-        else:
-            failure_count = failure_count +1
-            print("%s failed:%d" %(stock_name, stock_data.ErrorCode))
+            if stock_data.ErrorCode == 0:
+                local_db.save_data("ml_security_table",stock_name,par_list_stock,stock_data)
+                ali_db.save_data("ml_security_table",stock_name,par_list_stock,stock_data)      
+                success_count = success_count + 1
+                end = clock()
+                print("%s success, loop=%d[%d/%d],used %ds" %(stock_name, j,success_count,security_list_size,end-start))
+            else:
+                failure_count = failure_count +1
+                print("%s failed:%d" %(stock_name, stock_data.ErrorCode))
 
     end = clock()
     print("\nupdated %d/%d stocks, used %ds" %(success_count,security_list_size,end-start) )
 
 
 if __name__ == '__main__':
-     update_all_stock()   
+    update_all_stock()   
 
     
     
