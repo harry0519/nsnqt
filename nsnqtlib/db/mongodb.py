@@ -11,8 +11,21 @@ from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
 import sys
 import time
 from time import clock
+import logging
 
 class MongoDB(BaseDB):
+    def init_log(self):
+        self.dblogger = logging.getLogger()
+        self.dblogger.setLevel(logging.DEBUG)
+
+        fh = logging.FileHandler('log/dbupdate.log')   
+        ch = logging.StreamHandler() 
+
+        formatter = logging.Formatter('[%(asctime)s][%(filename)s] %(message)s')  
+        fh.setFormatter(formatter)  
+        ch.setFormatter(formatter) 
+        dblogger.addHandler(fh)  
+        dblogger.addHandler(ch)
     def __init__(self,ip=LOCAL_SERVER_IP, 
                      port=MONGODB_PORT_DEFAULT, 
                      user_name=None, 
