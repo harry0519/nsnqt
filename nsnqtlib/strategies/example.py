@@ -12,7 +12,6 @@ class examplestock(basestrategy):
                 count: float, the number to the row since first row
             ouput:
                 bool, can buy or not buy
-                [], buy record,if can't buy,is empty list
         '''
         vol_day = 10
         price_day = 60

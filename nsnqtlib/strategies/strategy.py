@@ -21,6 +21,7 @@ class basestrategy(object):
         self.looplist = []
         self.trading_records = []
         self.holding_records = []
+        self.datalst = []
     
     def setlooplist(self,lst=[]):
         if not lst:
@@ -53,12 +54,35 @@ class basestrategy(object):
         buyrecord = []
         return False,traderecord
     
+    def setenv(self,collection):
+        data = self._getdata(collection)
+        self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
+        return 
+    
+    def rehabilitation(self,lst):
+        close = lst[0][2]
+        c = 1
+        reh = {}
+        for line in lst[1:]:
+            c_preclose = line[6]
+            if c_preclose != close:
+                reh[c] = c_preclose/close
+            close = line[2]
+            c += 1
+        
+        for k in sorted(reh.keys()):
+            pass
+        return lst
+    
+    def recount(self,lst,sc,ec,weight):
+        pass
+    
     def historyreturn(self,collection):
+        self.setenv(collection)
         trading_record = []
         holding_record = []
-        data = self._getdata(collection)
-        lst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
         count = 0
+        lst = self.datalst
         for line in lst[:]:
             isbuy = self.buy(lst,count)
             
@@ -68,17 +92,19 @@ class basestrategy(object):
                     holding_record.remove(b)
                     trading_record.append(traderecord)
                     print (traderecord)
-            
             if isbuy:
-                holding_record.append((line,count,collection))
+                holding_record.append(([i for i in line],count,collection))
             count += 1
         return trading_record,holding_record
     
     def looplist_historyreturn(self):
         for collection in self.looplist:
-            tr,hr = self.historyreturn(collection)
-            self.trading_records.extend(tr)
-            self.holding_records.extend(hr)
+            try:
+                tr,hr = self.historyreturn(collection)
+                self.trading_records.extend(tr)
+                self.holding_records.extend(hr)
+            except:
+                print ("error: {}".format(collection))
         return self.trading_records,self.holding_records
     
     def savetrading2csv(self,filename="trading_records.csv"):
@@ -90,8 +116,6 @@ class basestrategy(object):
         df = pd.DataFrame(self.holding_records,columns=["date","buy_data","stock"])
         df.to_csv(filename)
         return
-
-
 
 class reportforms():
     def __init__(self):
