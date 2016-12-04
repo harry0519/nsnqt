@@ -82,6 +82,7 @@ class macd(basestrategy):
     def setenv(self,collection):
         data = self._getdata(collection)
         self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
+        self.datalst = self.rehabilitation(self.datalst)
         self.setmacdlist(self.datalst)
         return
     

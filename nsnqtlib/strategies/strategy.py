@@ -57,25 +57,35 @@ class basestrategy(object):
     def setenv(self,collection):
         data = self._getdata(collection)
         self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
+        self.datalst = self.rehabilitation(self.datalst)
         return 
     
     def rehabilitation(self,lst):
         close = lst[0][2]
         c = 1
-        reh = {}
+        reh = []
         for line in lst[1:]:
             c_preclose = line[6]
             if c_preclose != close:
-                reh[c] = c_preclose/close
+                reh = [[i[0],i[1]*c_preclose/close] for i in reh]
+                reh.append([c,c_preclose/close])
             close = line[2]
             c += 1
-        
-        for k in sorted(reh.keys()):
-            pass
-        return lst
+        result = []
+        sc = 0
+        for idx in range(len(reh)):
+            weight = reh[idx][1]
+            ec = reh[idx][0]
+            piece = self.recount(lst,sc,ec,weight)
+            result.extend(piece)
+            sc = ec
+        return result
     
     def recount(self,lst,sc,ec,weight):
-        pass
+        rst = []
+        for line in lst[sc:ec]:
+            rst.append([line[0],line[1]],*[i*weight for i in line [2:]])
+        return rst    
     
     def historyreturn(self,collection):
         self.setenv(collection)
