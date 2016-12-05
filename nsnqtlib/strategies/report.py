@@ -16,6 +16,10 @@ class report(object):
         df should be follow this format:"index(title is none)" "stock","buy_date","sell_date","holddays","profit"
         '''
         self.df = df
+#         print (sorted(df["buy_date"])[0])
+#         print (sorted(df["sell_date"])[-1])
+#         import sys
+#         sys.exit(0)
     
     def formatdate(self,s):
         try:
@@ -28,6 +32,7 @@ class report(object):
         return rst
     
     def positiongain(self,start="2011-01-01",end="2016-11-18"):
+        
         totalmoney = 100
         leftmoney = 100
         holds = []
@@ -62,7 +67,6 @@ class report(object):
         plt.savefig("positiongain_from_{}_to_{}.png".format(start,end))
         plt.show()
     
-    
     def cumulative_graph(self,datafile="",start="2013-03-01",end="2016-11-18"):
         date = [i.strftime('%Y-%m-%d') for i in pd.date_range(start, end)]
         result = {d:[0,0] for d in date}
@@ -85,7 +89,7 @@ class report(object):
         plt.show()  
 
 if __name__ == '__main__':
-    df = pd.read_csv('macd(2).csv')
+    df = pd.read_csv('macd.csv')
     r = report(df)
     r.positiongain(start="2011-01-01",end="2016-11-18")
     

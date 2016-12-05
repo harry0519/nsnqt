@@ -1,11 +1,10 @@
 # -*- coding:utf-8 -*-
 from  nsnqtlib.db.mongodb import MongoDB
-import threading
 import time
 import datetime
-import sys
 import pandas as pd
-import tushare as ts
+import matplotlib.pyplot as plt
+import random
 from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
 
 class basestrategy(object):
@@ -126,9 +125,74 @@ class basestrategy(object):
         df.to_csv(filename)
         return
 
-class reportforms():
-    def __init__(self):
-        pass
+class reportforms(object):
+    def __init__(self,df):
+        '''
+        df should be follow this format:"index(title is none)" "stock","buy_date","sell_date","holddays","profit"
+        '''
+        self.df = df[["stock","buy_date","sell_date","holddays","profit"]]
+        self.start = sorted(self.df["buy_date"].values)[0]
+        self.end = sorted(self.df["sell_date"].values)[-1]
+
+    def positiongain(self,piece=10):
+        '''
+        '''
+        totalmoney = 100
+        leftmoney = 100
+        holds = []
+        datelist = [i.strftime('%Y-%m-%d') for i in pd.date_range(self.start, self.end)]
+        result = {d:[] for d in datelist}
+        gains = {d:0 for d in datelist}
+        for i in self.df.values:
+            buydate = i[1]
+            result[buydate].append(i)
+        
+        for date in datelist:
+            currentholdnum = len(holds)
+            current_day_could_buy_num = len(result[date])
+            if current_day_could_buy_num >=1 and currentholdnum < piece:
+                buymoney = leftmoney/(piece-currentholdnum)
+                if current_day_could_buy_num + currentholdnum <= piece:
+                    leftmoney = leftmoney - buymoney*current_day_could_buy_num
+                    holds.extend([(i,buymoney) for i in result[date]])
+                else:
+                    leftmoney = 0
+                    holds.extend([(i,buymoney) for i in random.sample(result[date],piece-currentholdnum)])
+            for d in holds[:]:
+                sell_date = d[0][2]
+                if sell_date >= date : 
+                    holds.remove(d)
+                    leftmoney += d[1]*(d[0][4]+1)  
+                    totalmoney += d[1]*d[0][4]
+            gains[date] = totalmoney
+            
+        newdf = pd.DataFrame(data=[gains[i] for i in datelist], index=datelist,columns=["totalmoney",])
+        newdf["date"] = newdf.index
+        newdf.plot(x="date", y="totalmoney", kind='area')
+        plt.savefig("positiongain_from_{}_to_{}.png".format(self.start,self.end))
+#         plt.show()
+    
+    def cumulative_graph(self,):
+        date = [i.strftime('%Y-%m-%d') for i in pd.date_range(self.start, self.end)]
+        result = {d:[0,0] for d in date}
+        df = self.df
+        for i in df.values:
+            selldate = i[2]
+            gains = i[4]
+            result[selldate][0] += gains
+            result[selldate][1] += 1
+        newdf = pd.DataFrame(data=[[result[i][0],result[i][1]] for i in date], index=date,columns=["profit","buynums"])
+        newdf["totalprofit"] = newdf["profit"].cumsum()
+        newdf["totalbuys"] = newdf["buynums"].cumsum()
+        newdf["averageprofit"] = (newdf["profit"]/newdf["buynums"]).fillna(0)
+        newdf["addup_averageprofit"] = newdf["averageprofit"].cumsum().fillna(0)
+        newdf["date"] = newdf.index
+        newdf.plot(x="date", y="addup_averageprofit", kind='line')
+        
+        plt.savefig("addup_averageprofit.png")
+        
+#         plt.show()  
+
     
 
 if __name__ == '__main__':
