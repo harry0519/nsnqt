@@ -1,6 +1,5 @@
 # -*- coding:utf-8 -*-
 from nsnqtlib.strategies.strategy import  basestrategy
-
 class macd(basestrategy):
     '''
            ��д��������������������
@@ -37,7 +36,7 @@ class macd(basestrategy):
         return False
     
     def sell(self,lst,count,buyrecord):
-        sell_date = lst[count][0]
+        sell_date = self.timestamp2date(lst[count][0])
         close = lst[count][2]
         currentday_high = lst[count][3]
         currentday_low = lst[count][4]
@@ -45,20 +44,20 @@ class macd(basestrategy):
         loss_grads = -0.05
         buy_price = buyrecord[0][2]
         hold_days = count - buyrecord[1]
-        buy_date = buyrecord[0][0]
+        buy_date = self.timestamp2date(buyrecord[0][0])
         collection = buyrecord[2]
-#         if self.sell_condition(lst,count):
-#             return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price]
         
         if self.stopgain_condition(buy_price,currentday_high,gain_grads):
             return True,[collection,buy_date,sell_date,hold_days,gain_grads]
-        
         elif self.stoploss_condition(buy_price,currentday_low,loss_grads):
             return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price]
-        
-#         elif self.holdingtime_condition(hold_days,dayout):
-#             return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price]
         return False,None
+    
+    def timestamp2date(self,timestamp):
+        try:
+            return str(timestamp).split(" ")[0]
+        except:
+            return timestamp
     
     def sell_condition(self,lst,count):
         meanday = 5
@@ -77,7 +76,6 @@ class macd(basestrategy):
         if (current_price-buy_price)/buy_price <= grads:
             return True
         return False
-    
     
     def setenv(self,collection):
         data = self._getdata(collection)

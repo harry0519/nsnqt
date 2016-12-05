@@ -51,7 +51,6 @@ class basestrategy(object):
     
     def sell(self,line,count,holding_record):
         traderecord = []
-        buyrecord = []
         return False,traderecord
     
     def setenv(self,collection):
