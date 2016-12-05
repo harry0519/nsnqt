@@ -1,5 +1,7 @@
 # -*- coding:utf-8 -*-
 from nsnqtlib.strategies.strategy import  basestrategy,reportforms
+import pandas as pd
+
 class macd(basestrategy):
     '''
            ��д��������������������
@@ -106,7 +108,8 @@ if __name__ == '__main__':
     s.looplist_historyreturn()
     s.savetrading2csv("macd.csv")
     
-    report = reportforms(macd.csv)
+    df = pd.read_csv('macd.csv')
+    report = reportforms(df)
     report.cumulative_graph()
     report.positiongain()
     
