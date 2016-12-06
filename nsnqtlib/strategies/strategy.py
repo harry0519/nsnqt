@@ -3,6 +3,10 @@ from  nsnqtlib.db.mongodb import MongoDB
 import time
 import datetime
 import pandas as pd
+import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import random
 from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
