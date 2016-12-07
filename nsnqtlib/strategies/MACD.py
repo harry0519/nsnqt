@@ -31,6 +31,7 @@ class macd(basestrategy):
     def buy_condition1(self,count):
         if self.macdlist[count]>0 and \
             self.macdlist[count-1]<0:
+            self.status = False
             return True 
         if self.macdlist[count]<0 and \
             self.macdlist[count-1]>0:
@@ -40,6 +41,8 @@ class macd(basestrategy):
     def buy_condition2(self,count):
         if self.difflist[count] <0 :
             return True
+        else:
+            self.status = False
         return False
     
     def sell(self,lst,count,buyrecord):

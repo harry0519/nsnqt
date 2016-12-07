@@ -107,6 +107,8 @@ class basestrategy(object):
             if isbuy:
                 holding_record.append(([i for i in line],count,collection))
             count += 1
+#         "date","volume","close","high","low","open","pre_close"
+#         holdresult = [[collection,i[0],] for i in holding_record ]
         return trading_record,holding_record
     
     def looplist_historyreturn(self):
