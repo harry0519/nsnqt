@@ -11,6 +11,7 @@ class macd(basestrategy):
         self.emafast = emafast
         self.emaslow = emaslow
         self.demday = demday
+        self.status = False
         super(macd,self).__init__(startdate,enddate)
     
     def buy(self,lst,count):
@@ -22,7 +23,8 @@ class macd(basestrategy):
                 [], buy record,if can't buy,is empty list
         '''
         if self.buy_condition1(count) and \
-            self.buy_condition2(count):
+            self.buy_condition2(count) and self.status:
+            self.status = False
             return True
         return False
     
@@ -30,6 +32,9 @@ class macd(basestrategy):
         if self.macdlist[count]>0 and \
             self.macdlist[count-1]<0:
             return True 
+        if self.macdlist[count]<0 and \
+            self.macdlist[count-1]>0:
+            self.status = True
         return False
     
     def buy_condition2(self,count):

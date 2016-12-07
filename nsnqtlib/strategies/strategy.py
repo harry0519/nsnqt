@@ -204,7 +204,7 @@ class reportforms(object):
 
 if __name__ == '__main__':
     s=basestrategy()
-    s.setlooplist()
+    s.setlooplist(["002559.SZ"])
     for i in s.looplist:
         print (s._getdata(i))
 
