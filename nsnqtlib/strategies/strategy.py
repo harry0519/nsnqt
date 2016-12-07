@@ -138,7 +138,7 @@ class reportforms(object):
         self.start = sorted(self.df["buy_date"].values)[0]
         self.end = sorted(self.df["sell_date"].values)[-1]
 
-    def positiongain(self,piece=10):
+    def positiongain(self,piece=300):
         '''
         '''
         totalmoney = 100
@@ -191,6 +191,9 @@ class reportforms(object):
         newdf["averageprofit"] = (newdf["profit"]/newdf["buynums"]).fillna(0)
         newdf["addup_averageprofit"] = newdf["averageprofit"].cumsum().fillna(0)
         newdf["date"] = newdf.index
+        newdf.plot(x="date", y="totalprofit", kind='line')
+        newdf.plot(x="date", y="totalbuys", kind='line')
+        newdf.plot(x="date", y="averageprofit", kind='line')
         newdf.plot(x="date", y="addup_averageprofit", kind='line')
         
         plt.savefig("addup_averageprofit.png")

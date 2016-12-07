@@ -107,11 +107,11 @@ if __name__ == '__main__':
     s.setlooplist()
     s.looplist_historyreturn()
     s.savetrading2csv("macd.csv")
-    
+    s.saveholding2csv("macdhold.csv")
     df = pd.read_csv('macd.csv')
     report = reportforms(df)
     report.cumulative_graph()
-    report.positiongain()
+    report.positiongain(200)
     
 
 
