@@ -64,7 +64,7 @@ class macd(basestrategy):
         collection = buyrecord[2]
         
         if self.sell_condition(lst,count):
-            return True,[collection,buy_date,sell_date,hold_days,gain_grads]
+            return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price]
         
 #         if self.stopgain_condition(buy_price,currentday_high,gain_grads):
 #             return True,[collection,buy_date,sell_date,hold_days,gain_grads]
