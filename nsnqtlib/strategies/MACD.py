@@ -22,28 +22,34 @@ class macd(basestrategy):
                 bool, can buy or not buy
                 [], buy record,if can't buy,is empty list
         '''
+        
         if self.buy_condition1(count) and \
             self.buy_condition2(count) and self.status:
-            self.status = False
+            self.setstatus(lst,count)
             return True
+        self.setstatus(lst,count)
         return False
     
     def buy_condition1(self,count):
         if self.macdlist[count]>0 and \
             self.macdlist[count-1]<0:
-            self.status = False
             return True 
-        if self.macdlist[count]<0 and \
-            self.macdlist[count-1]>0:
-            self.status = True
         return False
     
     def buy_condition2(self,count):
         if self.difflist[count] <0 :
             return True
-        else:
-            self.status = False
         return False
+    
+    def setstatus(self,lst,count):
+        if self.macdlist[count]<0 and \
+            self.macdlist[count-1]>0:
+            self.status = True
+        elif self.macdlist[count]>0 and \
+            self.macdlist[count-1]<0:
+            self.status = False
+        elif self.difflist[count] > 0 or self.demlist[count] >0 :
+            self.status = False
     
     def sell(self,lst,count,buyrecord):
         sell_date = self.timestamp2date(lst[count][0])
