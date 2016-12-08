@@ -23,12 +23,12 @@ class macd(basestrategy):
                 [], buy record,if can't buy,is empty list
         '''
         
+        rst = False
         if self.buy_condition1(count) and \
             self.buy_condition2(count) and self.status:
-            self.setstatus(lst,count)
-            return True
+            rst = True
         self.setstatus(lst,count)
-        return False
+        return rst
     
     def buy_condition1(self,count):
         if self.macdlist[count]>0 and \
@@ -63,10 +63,13 @@ class macd(basestrategy):
         buy_date = self.timestamp2date(buyrecord[0][0])
         collection = buyrecord[2]
         
-        if self.stopgain_condition(buy_price,currentday_high,gain_grads):
+        if self.sell_condition(lst,count):
             return True,[collection,buy_date,sell_date,hold_days,gain_grads]
-        elif self.stoploss_condition(buy_price,currentday_low,loss_grads):
-            return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price]
+        
+#         if self.stopgain_condition(buy_price,currentday_high,gain_grads):
+#             return True,[collection,buy_date,sell_date,hold_days,gain_grads]
+#         elif self.stoploss_condition(buy_price,currentday_low,loss_grads):
+#             return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price]
         return False,None
     
     def timestamp2date(self,timestamp):
