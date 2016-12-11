@@ -82,7 +82,10 @@ class macd(basestrategy):
         stocktype = self.getstocktype()
         trading_rate1 = lst[count][1]/lst[count-1][1]
         trading_rate2 = lst[count][1]/lst[count-2][1]
-        trading_rate10 = lst[count][1]/self.mean(lst[count-10:count])
+        try:
+            trading_rate10 = lst[count][1]/self.mean(lst[count-10:count])
+        except:
+            trading_rate10 = (trading_rate2 + trading_rate1)/2
         return [minmacd,days,*stocktype,trading_rate1,trading_rate2,trading_rate10]
     
     def sell(self,lst,count,buyrecord):

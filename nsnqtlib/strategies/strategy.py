@@ -192,7 +192,7 @@ class reportforms(object):
             gains = i[4]
             result[selldate][0] += gains
             result[selldate][1] += 1
-            if result[selldate][0]/result[selldate][0] >=0.1 or result[selldate][0]/result[selldate][0] <= -0.5:
+            if result[selldate][0]/result[selldate][1] >=0.1 or result[selldate][0]/result[selldate][1] <= -0.5:
                 print (result[selldate])
         newdf = pd.DataFrame(data=[[result[i][0],result[i][1]] for i in date], index=date,columns=["profit","buynums"])
         newdf["totalprofit"] = newdf["profit"].cumsum()
