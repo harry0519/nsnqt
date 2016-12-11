@@ -100,13 +100,13 @@ class macd(basestrategy):
         buy_date = self.timestamp2date(buyrecord[0][0])
         collection = buyrecord[2]
         feature = buyrecord[3]
-        if self.sell_condition(lst,count):
-            return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price,feature]
-        
-#         if self.stopgain_condition(buy_price,currentday_high,gain_grads):
-#             return True,[collection,buy_date,sell_date,hold_days,gain_grads,feature]
-#         elif self.stoploss_condition(buy_price,currentday_low,loss_grads):
+#         if self.sell_condition(lst,count):
 #             return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price,feature]
+        
+        if self.stopgain_condition(buy_price,currentday_high,gain_grads):
+            return True,[collection,buy_date,sell_date,hold_days,gain_grads,feature]
+        elif self.stoploss_condition(buy_price,currentday_low,loss_grads):
+            return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price,feature]
         return False,None
     
     def timestamp2date(self,timestamp):
