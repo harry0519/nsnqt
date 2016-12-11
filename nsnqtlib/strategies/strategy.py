@@ -132,7 +132,7 @@ class basestrategy(object):
         return
         
     def saveholding2csv(self,filename="holding_records.csv"):
-        df = pd.DataFrame(self.holding_records,columns=["date","buy_data","stock"])
+        df = pd.DataFrame(self.holding_records,columns=["date","buy_data","stock","features"])
         df.to_csv(filename)
         return
 
@@ -181,7 +181,7 @@ class reportforms(object):
         newdf["date"] = newdf.index
         newdf.plot(x="date", y="totalmoney", kind='area')
         plt.savefig("positiongain_from_{}_to_{}.png".format(self.start,self.end))
-#         plt.show()
+        plt.show()
     
     def cumulative_graph(self,):
         date = [i.strftime('%Y-%m-%d') for i in pd.date_range(self.start, self.end)]
@@ -192,6 +192,8 @@ class reportforms(object):
             gains = i[4]
             result[selldate][0] += gains
             result[selldate][1] += 1
+            if result[selldate][0]/result[selldate][0] >=0.1 or result[selldate][0]/result[selldate][0] <= -0.5:
+                print (result[selldate])
         newdf = pd.DataFrame(data=[[result[i][0],result[i][1]] for i in date], index=date,columns=["profit","buynums"])
         newdf["totalprofit"] = newdf["profit"].cumsum()
         newdf["totalbuys"] = newdf["buynums"].cumsum()
@@ -200,8 +202,8 @@ class reportforms(object):
         newdf["date"] = newdf.index
 #         newdf.plot(x="date", y="totalprofit", kind='line')
 #         newdf.plot(x="date", y="totalbuys", kind='line')
-        plt.scatter(range(len(date)),newdf["averageprofit"].values)
-#         newdf.plot(x="date", y="addup_averageprofit", kind='line')
+#         plt.scatter(range(len(date)),newdf["averageprofit"].values)
+        newdf.plot(x="date", y="addup_averageprofit", kind='line')
 #         newdf.plot(x="date", y="buynums", kind='line')
         
 #         plt.savefig("addup_averageprofit.png")

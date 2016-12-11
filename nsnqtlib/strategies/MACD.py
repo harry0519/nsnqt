@@ -113,7 +113,7 @@ class macd(basestrategy):
             return timestamp
     
     def sell_condition(self,lst,count):
-        meanday = 5
+        meanday = 20
         close = lst[count][2] 
         meanlist = [i[2] for i in lst[count-meanday+1:count+1]]
         if close <= sum(meanlist)/meanday:
