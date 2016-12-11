@@ -20,7 +20,7 @@ class basestrategy(object):
         self.enddate = enddate
         self.m = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
         self.formatlist = ["date","volume","close","high","low","open","pre_close"]
-        self.savevols = ["stock","buy_date","sell_date","holddays","profit"]
+        self.savevols = ["stock","buy_date","sell_date","holddays","profit","features"]
         self.looplist = []
         self.trading_records = []
         self.holding_records = []
