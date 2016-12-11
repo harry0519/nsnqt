@@ -14,7 +14,7 @@ class macd(basestrategy):
         self.status = False
         self.count = 0
         self.gain_grads = 0.1
-        self.loss_grads = -0.05
+        self.loss_grads = -0.10
         
         super(macd,self).__init__(startdate,enddate)
     
@@ -93,8 +93,8 @@ class macd(basestrategy):
         close = lst[count][2]
         currentday_high = lst[count][3]
         currentday_low = lst[count][4]
-        gain_grads = 0.1
-        loss_grads = -0.05
+        gain_grads = self.gain_grads
+        loss_grads = self.loss_grads
         buy_price = buyrecord[0][2]
         hold_days = count - buyrecord[1]
         buy_date = self.timestamp2date(buyrecord[0][0])
