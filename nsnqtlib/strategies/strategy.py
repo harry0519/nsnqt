@@ -57,6 +57,7 @@ class basestrategy(object):
         return False,traderecord
     
     def setenv(self,collection):
+        self.collection = collection
         data = self._getdata(collection)
         self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
         self.datalst = self.rehabilitation(self.datalst)
@@ -89,6 +90,9 @@ class basestrategy(object):
             rst.append([line[0],line[1],*[i*weight for i in line [2:]]])
         return rst    
     
+    def getfeatures(self,count):
+        return []
+    
     def historyreturn(self,collection):
         self.setenv(collection)
         trading_record = []
@@ -105,7 +109,8 @@ class basestrategy(object):
                     trading_record.append(traderecord)
                     print (traderecord)
             if isbuy:
-                holding_record.append(([i for i in line],count,collection))
+                feature = self.getfeatures(lst,count)
+                holding_record.append(([i for i in line],count,collection,feature))
             count += 1
 #         "date","volume","close","high","low","open","pre_close"
 #         holdresult = [[collection,i[0],] for i in holding_record ]
@@ -193,16 +198,21 @@ class reportforms(object):
         newdf["averageprofit"] = (newdf["profit"]/newdf["buynums"]).fillna(0)
         newdf["addup_averageprofit"] = newdf["averageprofit"].cumsum().fillna(0)
         newdf["date"] = newdf.index
-        newdf.plot(x="date", y="totalprofit", kind='line')
-        newdf.plot(x="date", y="totalbuys", kind='line')
-        newdf.plot(x="date", y="averageprofit", kind='line')
-        newdf.plot(x="date", y="addup_averageprofit", kind='line')
+#         newdf.plot(x="date", y="totalprofit", kind='line')
+#         newdf.plot(x="date", y="totalbuys", kind='line')
+        plt.scatter(range(len(date)),newdf["averageprofit"].values)
+#         newdf.plot(x="date", y="addup_averageprofit", kind='line')
+#         newdf.plot(x="date", y="buynums", kind='line')
         
-        plt.savefig("addup_averageprofit.png")
-        
-#         plt.show()  
+#         plt.savefig("addup_averageprofit.png")
+        plt.show()  
 
-    
+# class paramopt(object):
+#     def __init__(self,**p):
+#         self.paras = paras
+#     
+#     def 
+#     pass   
 
 if __name__ == '__main__':
     s=basestrategy()

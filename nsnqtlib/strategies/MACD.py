@@ -12,6 +12,10 @@ class macd(basestrategy):
         self.emaslow = emaslow
         self.demday = demday
         self.status = False
+        self.count = 0
+        self.gain_grads = 0.1
+        self.loss_grads = -0.05
+        
         super(macd,self).__init__(startdate,enddate)
     
     def buy(self,lst,count):
@@ -45,11 +49,41 @@ class macd(basestrategy):
         if self.macdlist[count]<0 and \
             self.macdlist[count-1]>0:
             self.status = True
+            self.count = count
         elif self.macdlist[count]>0 and \
             self.macdlist[count-1]<0:
             self.status = False
         elif self.difflist[count] > 0 or self.demlist[count] >0 :
             self.status = False
+            
+    def getstocktype(self):
+        if self.collection.startswith("300"):
+            return [1,0,0,0]
+        elif self.collection.startswith("002"):
+            return [0,1,0,0]
+        elif self.collection.startswith("000"):
+            return [0,0,1,0]
+        else:
+            return [0,0,0,1]
+    
+    def mean(self,lst):
+        total=0
+        for i in lst:
+            total += i[1]
+        return total/len(lst)
+            
+    
+    def getfeatures(self,lst,count):
+        """
+        MACD最小值   上一轮MACD小于0的天数   股票类型  换手率比值(前一交易日) 换手率比值（前二交易日） 换手率比值（前十天均值）
+        """
+        minmacd = min(self.macdlist[self.count:count])
+        days = count - self.count
+        stocktype = self.getstocktype()
+        trading_rate1 = lst[count][1]/lst[count-1][1]
+        trading_rate2 = lst[count][1]/lst[count-2][1]
+        trading_rate10 = lst[count][1]/self.mean(lst[count-10:count])
+        return [minmacd,days,*stocktype,trading_rate1,trading_rate2,trading_rate10]
     
     def sell(self,lst,count,buyrecord):
         sell_date = self.timestamp2date(lst[count][0])
@@ -62,14 +96,14 @@ class macd(basestrategy):
         hold_days = count - buyrecord[1]
         buy_date = self.timestamp2date(buyrecord[0][0])
         collection = buyrecord[2]
-        
+        feature = buyrecord[3]
         if self.sell_condition(lst,count):
-            return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price]
+            return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price,feature]
         
 #         if self.stopgain_condition(buy_price,currentday_high,gain_grads):
-#             return True,[collection,buy_date,sell_date,hold_days,gain_grads]
+#             return True,[collection,buy_date,sell_date,hold_days,gain_grads,feature]
 #         elif self.stoploss_condition(buy_price,currentday_low,loss_grads):
-#             return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price]
+#             return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price,feature]
         return False,None
     
     def timestamp2date(self,timestamp):
@@ -97,6 +131,7 @@ class macd(basestrategy):
         return False
     
     def setenv(self,collection):
+        self.collection = collection
         data = self._getdata(collection)
         self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
         self.datalst = self.rehabilitation(self.datalst)
@@ -128,7 +163,7 @@ if __name__ == '__main__':
     df = pd.read_csv('macd.csv')
     report = reportforms(df)
     report.cumulative_graph()
-    report.positiongain(200)
+    report.positiongain(100)
     
 
 
