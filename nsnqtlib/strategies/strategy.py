@@ -113,7 +113,7 @@ class basestrategy(object):
                 holding_record.append(([i for i in line],count,collection,feature))
             count += 1
 #         "date","volume","close","high","low","open","pre_close"
-        holdresult = [[collection,i[0][0],i[0][2],i[3]] for i in holding_record ]
+        holdresult = [[collection,self.timestamp2date(i[0][0]),i[0][2],i[3]] for i in holding_record ]
         return trading_record,holdresult
     
     def looplist_historyreturn(self):
@@ -126,13 +126,19 @@ class basestrategy(object):
                 print ("error: {}".format(collection))
         return self.trading_records,self.holding_records
     
+    def timestamp2date(self,timestamp):
+        try:
+            return str(timestamp).split(" ")[0]
+        except:
+            return timestamp
+    
     def savetrading2csv(self,filename="trading_records.csv"):
         df = pd.DataFrame(self.trading_records,columns=self.savevols)
         df.to_csv(filename)
         return
         
     def saveholding2csv(self,filename="holding_records.csv"):
-        df = pd.DataFrame(self.holding_records,columns=["date","buy_data","stock","features"])
+        df = pd.DataFrame(self.holding_records,columns=["stock","date","buy_data","features"])
         df.to_csv(filename)
         return
 

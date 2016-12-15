@@ -109,12 +109,6 @@ class macd(basestrategy):
             return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price,feature]
         return False,None
     
-    def timestamp2date(self,timestamp):
-        try:
-            return str(timestamp).split(" ")[0]
-        except:
-            return timestamp
-    
     def sell_condition(self,lst,count):
         meanday = 20
         close = lst[count][2] 
