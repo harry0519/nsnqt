@@ -113,8 +113,8 @@ class basestrategy(object):
                 holding_record.append(([i for i in line],count,collection,feature))
             count += 1
 #         "date","volume","close","high","low","open","pre_close"
-#         holdresult = [[collection,i[0],] for i in holding_record ]
-        return trading_record,holding_record
+        holdresult = [[collection,i[0][0],i[0][2],i[3]] for i in holding_record ]
+        return trading_record,holdresult
     
     def looplist_historyreturn(self):
         for collection in self.looplist:
