@@ -48,6 +48,15 @@ class cashoptionstrategy(basestrategy):
         return self.formatquery(query,out)
     '''
 
+    '''
+    def _getdata(self,collection="600455.SH",db="ml_security_table"):
+        #query = pd.read_csv(str(collection) + '.csv', parse_dates=['date'])
+        #print(query)
+        query = self.m.read_data(db,collection,filt={"date":{"$gt": self.startdate}})
+        out = self.formatlist
+        return self.formatquery(query,out)
+    '''
+
     def historyreturn(self, collection, par):
         trading_record = []
         holding_record = []
@@ -69,6 +78,7 @@ class cashoptionstrategy(basestrategy):
             if isbuy:
                 #holding_record.append((line, count, collection))
                 holding_record.append(([i for i in line], count, collection))
+
             count += 1
         return trading_record, holding_record
 
@@ -109,10 +119,10 @@ class cashoptionstrategy(basestrategy):
         dat = lst[count][0]
         vol = lst[count][1]
         close = lst[count][2]
-        #         high = lst[count][3]
-        #         low = lst[count][4]
-        #         open = lst[count][5]
-        #         pre_close = lst[count][6]
+        high = lst[count][3]
+        low = lst[count][4]
+        open = lst[count][5]
+        pre_close = lst[count][6]
         if count <= 60: return False
         vol_data = [i[1] for i in lst[count - vol_day:count]]
         maxprice = max([i[3]] for i in lst[count - price_day:count])[0]
@@ -126,10 +136,28 @@ class cashoptionstrategy(basestrategy):
                 self.buy_condition5(count, maxindex):
             return True
         '''
+        if self.waitforbuy(dat, close, par) and self.condition8(close, low, pre_close) and self.condition9(close, pre_close) and self.bought == False:
+            #self.waitbuy = True
+            self.bought = True
+            print(dat)
+            return True
+        return False
+            #print(self.waitbuy)
+
+        #and self.condition9(close, pre_close)
+        '''
+        if self.waitbuy == True: # and self.bought == False:
+            if self.condition8(close,low, pre_close):
+                self.bought = True
+                self.waitbuy = False
+                return True
+        return False
+       '''
+
+    def waitforbuy(self, dat, close, par):
         if self.condition6(dat, par[1]) and \
                 self.condition7(close, par[0]):
-            return True
-
+             return True
         return False
 
     def sell(self, lst, count, buyrecord):
@@ -147,18 +175,16 @@ class cashoptionstrategy(basestrategy):
         collection = buyrecord[2]
 
         if self.stopgain_condition(buy_price, currentday_high, gain_grads):
+            self.bought = False
             gain_grads = (currentday_high - buy_price) / buy_price
             sell_date = sell_date.strftime('%Y-%m-%d')
             buy_date = buy_date.strftime('%Y-%m-%d')
             #sell_date = changedateformat(sell_date)
             return True, [collection, buy_date, sell_date, hold_days, gain_grads]
-        '''
         elif self.stoploss_condition(buy_price, currentday_low, loss_grads):
             return True, [collection, buy_date, sell_date, hold_days, (close - buy_price) / buy_price]
-
         elif self.holdingtime_condition(hold_days, dayout):
             return True, [collection, buy_date, sell_date, hold_days, (close - buy_price) / buy_price]
-        '''
         return False, None
 
     def stopgain_condition(self, buy_price, current_price, grads=0.1):
@@ -213,12 +239,23 @@ class cashoptionstrategy(basestrategy):
         # print(newdat)
         # print(newstartdate)
         if newdat > newstartdate:
+            #print(newdat)
             return True
         return False
 
     def condition7(self, close, cashprice):
         if close < cashprice:
             return True
+        return False
+
+    def condition8(self, close, low, pre_close):
+        if low > pre_close:
+             return True
+        return False
+
+    def condition9(self, close, pre_close):
+        if (close - pre_close) / pre_close < 0.099:
+             return True
         return False
 
 if __name__ == '__main__':
@@ -228,3 +265,4 @@ if __name__ == '__main__':
     #s.setlooplist()
     s.looplist_historyreturn(df_stocklist)
     s.savetrading2csv()
+    s.saveholding2csv()
