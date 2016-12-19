@@ -64,6 +64,7 @@ class basestrategy(object):
         self.collection = collection
         data = self._getdata(collection)
         self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
+        
         self.datalst = self.rehabilitation(self.datalst)
         return 
     
@@ -86,6 +87,7 @@ class basestrategy(object):
             piece = self.recount(lst,sc,ec,weight)
             result.extend(piece)
             sc = ec
+        result.extend(lst[ec:])
         return result
     
     def recount(self,lst,sc,ec,weight):
