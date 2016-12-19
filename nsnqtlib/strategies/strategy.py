@@ -87,7 +87,7 @@ class basestrategy(object):
             piece = self.recount(lst,sc,ec,weight)
             result.extend(piece)
             sc = ec
-        result.extend(lst[ec:])
+        result.extend([i for i in lst[ec:]])
         return result
     
     def recount(self,lst,sc,ec,weight):
