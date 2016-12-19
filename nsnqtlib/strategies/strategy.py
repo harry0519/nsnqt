@@ -27,6 +27,8 @@ class basestrategy(object):
         self.holding_records = []
         self.datalst = []
         self.collection = None
+        self.tempstatus = []
+        self.lateststatus = []
     
     def setlooplist(self,lst=[]):
         if not lst:
@@ -122,6 +124,7 @@ class basestrategy(object):
         for collection in self.looplist:
             try:
                 tr,hr = self.historyreturn(collection)
+                self.lateststatus.append(self.tempstatus)
                 self.trading_records.extend(tr)
                 self.holding_records.extend(hr)
             except:

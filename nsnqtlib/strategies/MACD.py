@@ -11,7 +11,8 @@ class macd(basestrategy):
         self.emafast = emafast
         self.emaslow = emaslow
         self.demday = demday
-        self.tempstatus = {}
+        self.tempstatus = []
+        self.procedurevol = ["stock","date","data","diff","macd","status"]
         self.status = False
         self.count = 0
         self.gain_grads = 0.1
@@ -24,13 +25,9 @@ class macd(basestrategy):
         macd = self.macdlist[count]
         diff = self.difflist[count]
         data = lst[count]
-        procedure = {"data":data,
-                     "diff":diff,
-                     "macd":macd,
-                     "status":status
-                     }
-        self.tempstatus[self.collection]=[lst[0],procedure]
-    
+        data[0] = self.timestamp2date(data[0])
+        self.tempstatus = [self.collection,data[0],data,diff,macd,status]
+        
     def buy(self,lst,count):
         ''' input:
                 lst: [] ,row data in every stock data,default is in self.formatlist = ["date","volume","close","high","low","open","pre_close"]
@@ -142,7 +139,6 @@ class macd(basestrategy):
     
     def setenv(self,collection):
         self.collection = collection
-        self.tempstatus[collection] = []
         data = self._getdata(collection)
         self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
         self.datalst = self.rehabilitation(self.datalst)
@@ -166,7 +162,7 @@ class macd(basestrategy):
             self.macdlist.append(2*(dif-dem))
 
     def saveprocedure(self,filename="procedure_records.csv"):
-        df = pd.DataFrame(self.trading_records,columns=["stock","data"])
+        df = pd.DataFrame(self.lateststatus,columns=self.procedurevol)
         df.to_csv(filename)
         return 
     
