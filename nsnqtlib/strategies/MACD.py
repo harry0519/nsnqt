@@ -7,7 +7,7 @@ class macd(basestrategy):
            ��д��������������������
     '''
     
-    def __init__(self,startdate=(2011, 1, 1),enddate=[],emafast=12,emaslow=26,demday=9):
+    def __init__(self,startdate=(2013, 1, 1),enddate=[],emafast=12,emaslow=26,demday=9):
         self.emafast = emafast
         self.emaslow = emaslow
         self.demday = demday
