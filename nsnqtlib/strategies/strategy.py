@@ -184,16 +184,13 @@ class reportforms(object):
                     holds.extend([([j for j in i],buymoney) for i in random.sample(result[date],piece-currentholdnum)])
             for d in holds[:]:
                 sell_date = d[0][2]
-                if date >= sell_date:
-                    leftmoney += d[1]*(d[0][4]+1)  
-                    totalmoney += d[1]*d[0][4]
+                if sell_date <= date : 
                     holds.remove(d)
-                    
+                    leftmoney += d[1]*(d[0][4]+1-0.0015)  
+                    totalmoney += d[1]*(d[0][4]-0.0015)
                     stock_i=d[0]
                     stock_i.append(d[1])
                     trade_history.append(stock_i)
-                    break
-                    
             gains[date] = totalmoney
         
         resultdf = pd.DataFrame(trade_history,columns=["stock","buy_date","sell_date","holddays","profit","buy_money"])
