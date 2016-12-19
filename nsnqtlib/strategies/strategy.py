@@ -26,13 +26,14 @@ class basestrategy(object):
         self.trading_records = []
         self.holding_records = []
         self.datalst = []
+        self.collection = None
     
     def setlooplist(self,lst=[]):
         if not lst:
             self.looplist = self.m.getallcollections("ml_security_table")
         else:
             self.looplist = lst
-        return 
+        return self.looplist
     
     def _getdata(self,collection="600455.SH",db="ml_security_table"):   
         query = self.m.read_data(db,collection,filt={"date":{"$gt": self.startdate}})

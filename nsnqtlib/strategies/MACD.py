@@ -11,12 +11,25 @@ class macd(basestrategy):
         self.emafast = emafast
         self.emaslow = emaslow
         self.demday = demday
+        self.tempstatus = {}
         self.status = False
         self.count = 0
         self.gain_grads = 0.1
         self.loss_grads = -0.10
         
         super(macd,self).__init__(startdate,enddate)
+    
+    def setprocedure(self,lst,count):
+        status = self.status
+        macd = self.macdlist[count]
+        diff = self.difflist[count]
+        data = lst[count]
+        procedure = {"data":data,
+                     "diff":diff,
+                     "macd":macd,
+                     "status":status
+                     }
+        self.tempstatus[self.collection].append([lst[0],procedure])
     
     def buy(self,lst,count):
         ''' input:
@@ -26,7 +39,7 @@ class macd(basestrategy):
                 bool, can buy or not buy
                 [], buy record,if can't buy,is empty list
         '''
-        
+        self.setprocedure(lst,count)
         rst = False
         if self.buy_condition1(count) and \
             self.buy_condition2(count) and self.status:
@@ -129,6 +142,7 @@ class macd(basestrategy):
     
     def setenv(self,collection):
         self.collection = collection
+        self.tempstatus[collection] = []
         data = self._getdata(collection)
         self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
         self.datalst = self.rehabilitation(self.datalst)
@@ -150,6 +164,32 @@ class macd(basestrategy):
             dem = (dem*(self.demday-1)+ 2*dif)/(self.demday+1)
             self.demlist.append(dem)
             self.macdlist.append(2*(dif-dem))
+
+    def saveprocedure(self,filename="procedure_records.csv"):
+        df = pd.DataFrame(self.trading_records,columns=["stock","data"])
+        df.to_csv(filename)
+        return 
+    
+class status():
+    def __init__(self,lst,count,):
+        self.lst = lst
+        self.count = count
+        self.macd = macd()
+    
+    def createstatusfromdata(self):
+        looplist = self.macd.setlooplist()
+        pass
+    
+    def createstatus(self):
+        pass
+    
+    def getstatus(self):
+        pass
+    
+    def savestatus(self):
+        pass
+        
+
         
 if __name__ == '__main__':
     s = macd()
