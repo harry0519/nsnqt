@@ -29,7 +29,7 @@ class macd(basestrategy):
                      "macd":macd,
                      "status":status
                      }
-        self.tempstatus[self.collection]={lst[0]:procedure}
+        self.tempstatus[self.collection]=[lst[0],procedure]
     
     def buy(self,lst,count):
         ''' input:
