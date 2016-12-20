@@ -8,7 +8,7 @@ class macd(basestrategy):
            ��д��������������������
     '''
     
-    def __init__(self,startdate=(2013, 1, 1),enddate=[],emafast=12,emaslow=26,demday=9):
+    def __init__(self,startdate=(2016, 1, 1),enddate=[],emafast=12,emaslow=26,demday=9):
         self.emafast = emafast
         self.emaslow = emaslow
         self.demday = demday
@@ -177,8 +177,15 @@ class macd(basestrategy):
     
     
     def getprocedure(self,filename="procedure_records.csv"):
+        '''"stock","date","data","s_ema","f_ema","diff","dem","macd","status"
+        '''
         df = pd.read_csv(filename)
-        for i in df[df.status == True ].values:
+        currentdata = self.getcurrentdata()
+        for i in df[df.status == True].values:
+            s_ema = i[4]
+            f_ema = i[5]
+            dem = i[7]
+            close = i[3][2]
             print (i)
     
     
@@ -193,12 +200,9 @@ class macd(basestrategy):
     
     
     
-    
-    
-    
 class realtimecheck():
     def __init__(self,df):
-        """df: stock,date,[data],diff,dem,status
+        """df: "stock","date","data","s_ema","f_ema","diff","dem","macd","status"
         """
         self.df = df
         self.buy = []
@@ -233,7 +237,7 @@ if __name__ == '__main__':
     df = pd.read_csv('macd.csv')
     report = reportforms(df)
     report.cumulative_graph()
-    report.positiongain(100)
+    report.positiongain(5)
 #     s.getprocedure('procedure_records.csv')
      
 
