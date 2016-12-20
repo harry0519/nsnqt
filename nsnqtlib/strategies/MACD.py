@@ -13,7 +13,7 @@ class macd(basestrategy):
         self.emaslow = emaslow
         self.demday = demday
         self.tempstatus = []
-        self.procedurevol = ["stock","date","data","diff","dem","macd","status"]
+        self.procedurevol = ["stock","date","data","s_ema","f_ema","diff","dem","macd","status"]
         self.status = False
         self.count = 0
         self.gain_grads = 0.1
@@ -26,9 +26,11 @@ class macd(basestrategy):
         dem = self.demlist[count]
         macd = self.macdlist[count]
         diff = self.difflist[count]
+        s_ema = self.s_ema[count]
+        f_ema = self.f_ema[count]
         data = lst[count]
         data[0] = self.timestamp2date(data[0])
-        self.tempstatus = [self.collection,data[0],data,diff,dem,macd,status]
+        self.tempstatus = [self.collection,data[0],data,s_ema,f_ema,diff,dem,macd,status]
         
     def buy(self,lst,count):
         ''' input:
@@ -153,11 +155,16 @@ class macd(basestrategy):
         self.difflist = []
         self.demlist = []
         self.macdlist = []
+        self.s_ema = []
+        self.f_ema = []
+        
         for line in lst:
             s_ema = (s_ema*(self.emaslow-1)+ 2*line[2])/(self.emaslow+1)
             f_ema = (f_ema*(self.emafast-1)+ 2*line[2])/(self.emafast+1)
             dif = f_ema-s_ema
             self.difflist.append(dif)
+            self.s_ema.append(s_ema)
+            self.f_ema.append(f_ema)
            
             dem = (dem*(self.demday-1)+ 2*dif)/(self.demday+1)
             self.demlist.append(dem)
@@ -171,7 +178,7 @@ class macd(basestrategy):
     
     def getprocedure(self,filename="procedure_records.csv"):
         df = pd.read_csv(filename)
-        for i in df[df.status == True & df.diff-df.dem <0].values:
+        for i in df[df.status == True ].values:
             print (i)
     
     
