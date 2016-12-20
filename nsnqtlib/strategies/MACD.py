@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 from nsnqtlib.strategies.strategy import  basestrategy,reportforms
 import pandas as pd
+import tushare as ts
 
 class macd(basestrategy):
     '''
@@ -12,7 +13,7 @@ class macd(basestrategy):
         self.emaslow = emaslow
         self.demday = demday
         self.tempstatus = []
-        self.procedurevol = ["stock","date","data","diff","macd","status"]
+        self.procedurevol = ["stock","date","data","diff","dem","status"]
         self.status = False
         self.count = 0
         self.gain_grads = 0.1
@@ -22,11 +23,11 @@ class macd(basestrategy):
     
     def setprocedure(self,lst,count):
         status = self.status
-        macd = self.macdlist[count]
+        dem = self.demlist[count]
         diff = self.difflist[count]
         data = lst[count]
         data[0] = self.timestamp2date(data[0])
-        self.tempstatus = [self.collection,data[0],data,diff,macd,status]
+        self.tempstatus = [self.collection,data[0],data,diff,dem,status]
         
     def buy(self,lst,count):
         ''' input:
@@ -166,20 +167,47 @@ class macd(basestrategy):
         df.to_csv(filename)
         return 
     
-class status():
-    def __init__(self,lst,count,):
-        self.lst = lst
-        self.count = count
-        self.macd = macd()
     
-    def createstatusfromdata(self):
-        looplist = self.macd.setlooplist()
-        pass
+    def getprocedure(self,filename="procedure_records.csv"):
+        df = pd.read_csv(filename)
+        for i in df[df.status == True & df.diff-df.dem <0].values:
+            print (i)
+    
+    
+    
+    
+    def getcurrentdata(self):
+        '''code：代码, name:名称 ,changepercent:涨跌幅 , trade:现价 ,open:开盘价 ,high:最高价, low:最低价, settlement:昨日收盘价 ,
+           volume:成交量 ,turnoverratio:换手率 ,amount:成交量 ,per:市盈率 ,pb:市净率, mktcap:总市值 ,nmc:流通市值
+        '''
+        rst = ts.get_today_all()
+        return rst
+    
+    
+    
+    
+    
+    
+class realtimecheck():
+    def __init__(self,df):
+        """df: stock,date,[data],diff,dem,status
+        """
+        self.df = df
+        self.buy = []
     
     def createstatus(self):
-        pass
+        for i in self.df.values:
+            stock = i[1]
+            date = i[2]
+            data = i[3]
+            diff = i[4]
+            macd = i[5]
+            status = i[6]
+            print(i)
     
-    def getstatus(self):
+    def isbuy(self,diff,dem,status,currentdata):
+#         diff = processdata
+        
         pass
     
     def savestatus(self):
@@ -198,6 +226,7 @@ if __name__ == '__main__':
     report = reportforms(df)
     report.cumulative_graph()
     report.positiongain(100)
+#     s.getprocedure('procedure_records.csv')
     
 
 
