@@ -179,24 +179,36 @@ class macd(basestrategy):
     def getprocedure(self,filename="procedure_records.csv"):
         '''"stock","date","data","s_ema","f_ema","diff","dem","macd","status"
         '''
+        buy = []
         df = pd.read_csv(filename)
-        currentdata = self.getcurrentdata()
+        currentdata = { i[0]:i for i in self.getcurrentdata().values}
         for i in df[df.status == True].values:
+            stock = i[1].split(".")[0]
             s_ema = i[4]
             f_ema = i[5]
+            macd = i[6]
             dem = i[7]
             close = i[3][2]
-            print (i)
-    
-    
-    
-    
+            c_close = currentdata[stock][1]
+            
+            n_s_ema = (s_ema*(self.emaslow-1)+ 2*c_close)/(self.emaslow+1)
+            n_f_ema = (f_ema*(self.emafast-1)+ 2*c_close)/(self.emafast+1)
+            n_diff = n_f_ema-n_s_ema
+            n_dem = (dem*(self.demday-1)+ 2*n_diff)/(self.demday+1)
+            n_macd = 2*(n_diff-n_dem)
+            if n_macd >0 and macd <0 and n_diff<0:
+                buy.append(stock) 
+        return buy
+            
+            
+            
     def getcurrentdata(self):
         '''code：代码, name:名称 ,changepercent:涨跌幅 , trade:现价 ,open:开盘价 ,high:最高价, low:最低价, settlement:昨日收盘价 ,
            volume:成交量 ,turnoverratio:换手率 ,amount:成交量 ,per:市盈率 ,pb:市净率, mktcap:总市值 ,nmc:流通市值
         '''
+        out = ["code","trade","open","high","low","settlement"]
         rst = ts.get_today_all()
-        return rst
+        return rst[out]
     
     
     
@@ -238,7 +250,8 @@ if __name__ == '__main__':
     report = reportforms(df)
     report.cumulative_graph()
     report.positiongain(5)
-#     s.getprocedure('procedure_records.csv')
+    buy = s.getprocedure('procedure_records.csv')
+    print (buy)
      
 
 
