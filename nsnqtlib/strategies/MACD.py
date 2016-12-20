@@ -13,7 +13,7 @@ class macd(basestrategy):
         self.emaslow = emaslow
         self.demday = demday
         self.tempstatus = []
-        self.procedurevol = ["stock","date","data","diff","dem","status"]
+        self.procedurevol = ["stock","date","data","diff","dem","macd","status"]
         self.status = False
         self.count = 0
         self.gain_grads = 0.1
@@ -24,10 +24,11 @@ class macd(basestrategy):
     def setprocedure(self,lst,count):
         status = self.status
         dem = self.demlist[count]
+        macd = self.macdlist[count]
         diff = self.difflist[count]
         data = lst[count]
         data[0] = self.timestamp2date(data[0])
-        self.tempstatus = [self.collection,data[0],data,diff,dem,status]
+        self.tempstatus = [self.collection,data[0],data,diff,dem,macd,status]
         
     def buy(self,lst,count):
         ''' input:
@@ -227,7 +228,7 @@ if __name__ == '__main__':
     report.cumulative_graph()
     report.positiongain(100)
 #     s.getprocedure('procedure_records.csv')
-    
+     
 
 
 
