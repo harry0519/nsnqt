@@ -182,22 +182,26 @@ class macd(basestrategy):
         buy = []
         df = pd.read_csv(filename)
         currentdata = { i[0]:i for i in self.getcurrentdata().values}
+        print (currentdata)
         for i in df[df.status == True].values:
-            stock = i[1].split(".")[0]
-            s_ema = i[4]
-            f_ema = i[5]
-            macd = i[6]
-            dem = i[7]
-            close = i[3][2]
-            c_close = currentdata[stock][1]
-            
-            n_s_ema = (s_ema*(self.emaslow-1)+ 2*c_close)/(self.emaslow+1)
-            n_f_ema = (f_ema*(self.emafast-1)+ 2*c_close)/(self.emafast+1)
-            n_diff = n_f_ema-n_s_ema
-            n_dem = (dem*(self.demday-1)+ 2*n_diff)/(self.demday+1)
-            n_macd = 2*(n_diff-n_dem)
-            if n_macd >0 and macd <0 and n_diff<0:
-                buy.append(stock) 
+            try:
+                stock = i[1].split(".")[0]
+                s_ema = i[4]
+                f_ema = i[5]
+                macd = i[6]
+                dem = i[7]
+                close = i[3][2]
+                c_close = currentdata[stock][1]
+                
+                n_s_ema = (s_ema*(self.emaslow-1)+ 2*c_close)/(self.emaslow+1)
+                n_f_ema = (f_ema*(self.emafast-1)+ 2*c_close)/(self.emafast+1)
+                n_diff = n_f_ema-n_s_ema
+                n_dem = (dem*(self.demday-1)+ 2*n_diff)/(self.demday+1)
+                n_macd = 2*(n_diff-n_dem)
+                if n_macd >0 and macd <0 and n_diff<0:
+                    buy.append(stock) 
+            except:
+                print (stock)
         return buy
             
             
