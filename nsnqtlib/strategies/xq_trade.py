@@ -59,12 +59,14 @@ class trade():
         '''entrust:委托单号
         '''
         self.user.cancel_entrust(entrust)
+    
     def cancelall(self):
         entrust = [i for i in self.getentrust() if i["entrust_status"] == "已报" and i["entrust_bs"] == "买入"]
-        
         for i in entrust:
-            print (i)
-            self.cancel(i["entrust_no"])
+            flash_entrust = [i for i in self.getentrust() if i["entrust_status"] == "已报" and i["entrust_bs"] == "买入"]
+            entrust_no = flash_entrust[0]["entrust_no"]
+            print (entrust_no)
+            self.cancel(entrust_no)
         return 
         
     def sell(self,stock="600461",number=100,price=0.55):
