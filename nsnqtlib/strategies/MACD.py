@@ -182,7 +182,6 @@ class macd(basestrategy):
         buy = []
         df = pd.read_csv(filename)
         currentdata = { i[0]:i for i in self.getcurrentdata().values}
-        print (currentdata)
         for i in df[df.status == True].values:
             try:
                 stock = i[1].split(".")[0]
