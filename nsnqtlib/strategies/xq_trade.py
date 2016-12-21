@@ -31,7 +31,10 @@ class trade():
             buylst = self.buylist
         
         for stock in buylst:
-            t.buy(stock=stock,number=permoney,price=1)
+            try:
+                t.buy(stock=stock,number=permoney,price=1)
+            except:
+                print ("buy {} failed!!!!".format(stock))
             
     def getbalance(self):
         '''output:[{ 'asset_balance': '资产总值','current_balance': '当前余额','enable_balance': '可用金额','market_value': '证券市值',
