@@ -8,6 +8,12 @@ class cashoptionstrategy(basestrategy):
            重写买入条件和卖出条件，
     '''
 
+    def __init__(self,startdate=(2011, 1, 1),enddate=[],emafast=12,emaslow=26,demday=9):
+        self.pre_MA = False
+        self.curr_MA = False
+
+        super(cashoptionstrategy, self).__init__(startdate, enddate)
+
     # 获取需要交易股票列表
     def import_stocklist(self, stocklistname):
         df = pd.read_csv(str(stocklistname) + '.csv')
@@ -41,9 +47,7 @@ class cashoptionstrategy(basestrategy):
             query = self.m.read_data(db,collection,filt={"date":{"$gt": self.startdate}})
             out = self.formatlist
         elif db == "tushare":
-            print(db)
             query = ts.get_hist_data(collection, start='2005-01-01', end='2016-11-18', )
-            print(query)
             out = self.formatlist
         return self.formatquery(query,out)
     '''
@@ -60,9 +64,11 @@ class cashoptionstrategy(basestrategy):
     def historyreturn(self, collection, par):
         trading_record = []
         holding_record = []
-        print(collection)
+        #print(collection)
         data = self._getdata(collection)
-        print(data)
+        #df = pd.DataFrame(data)
+        #df.to_csv(collection+'.csv')
+        #print(data)
         lst = [l for l in data[self.formatlist].fillna(0).values if l[1] != 0]
         count = 0
         for line in lst[:]:
@@ -136,10 +142,9 @@ class cashoptionstrategy(basestrategy):
                 self.buy_condition5(count, maxindex):
             return True
         '''
-        if self.waitforbuy(dat, close, par) and self.condition8(close, low, pre_close) and self.condition9(close, pre_close) and self.bought == False:
-            #self.waitbuy = True
-            self.bought = True
-            print(dat)
+        #and self.condition7(close, par[0])
+        if self.condition6(dat, par[1]) and self.MA_judge_result(lst, count) and self.condition9(close, pre_close):
+            #print(dat)
             return True
         return False
             #print(self.waitbuy)
@@ -164,10 +169,12 @@ class cashoptionstrategy(basestrategy):
         currentday_high = lst[count][3]
         gain_grads = 0.2
         loss_grads = -0.05
-        dayout = 10
+        dayout = 30
         currentday_low = lst[count][4]
         sell_date = lst[count][0]
         close = lst[count][2]
+        high = lst[count][3]
+        low = lst[count][4]
 
         buy_price = buyrecord[0][2]
         hold_days = count - buyrecord[1]
@@ -180,12 +187,27 @@ class cashoptionstrategy(basestrategy):
             sell_date = sell_date.strftime('%Y-%m-%d')
             buy_date = buy_date.strftime('%Y-%m-%d')
             #sell_date = changedateformat(sell_date)
-            return True, [collection, buy_date, sell_date, hold_days, gain_grads]
+            return True, [collection, buy_date, sell_date, hold_days, gain_grads, '']
         elif self.stoploss_condition(buy_price, currentday_low, loss_grads):
-            return True, [collection, buy_date, sell_date, hold_days, (close - buy_price) / buy_price]
+            sell_date = sell_date.strftime('%Y-%m-%d')
+            buy_date = buy_date.strftime('%Y-%m-%d')
+            return True, [collection, buy_date, sell_date, hold_days, (close - buy_price) / buy_price, '']
         elif self.holdingtime_condition(hold_days, dayout):
-            return True, [collection, buy_date, sell_date, hold_days, (close - buy_price) / buy_price]
+            sell_date = sell_date.strftime('%Y-%m-%d')
+            buy_date = buy_date.strftime('%Y-%m-%d')
+            return True, [collection, buy_date, sell_date, hold_days, (close - buy_price) / buy_price, '']
+        elif self.Sellcondition1(lst,high, count, 30) and self.Sellcondition2(lst,high, low, close):
+            sell_date = sell_date.strftime('%Y-%m-%d')
+            buy_date = buy_date.strftime('%Y-%m-%d')
+            return True, [collection, buy_date, sell_date, hold_days, (close - buy_price) / buy_price, '']
         return False, None
+
+    '''
+            elif self.holdingtime_condition(hold_days, dayout):
+                sell_date = sell_date.strftime('%Y-%m-%d')
+                buy_date = buy_date.strftime('%Y-%m-%d')
+                return True, [collection, buy_date, sell_date, hold_days, (close - buy_price) / buy_price, '']
+    '''
 
     def stopgain_condition(self, buy_price, current_price, grads=0.1):
         if (current_price - buy_price) / buy_price >= grads:
@@ -258,9 +280,41 @@ class cashoptionstrategy(basestrategy):
              return True
         return False
 
+    def MA_judge_result(self, lst, count):
+        self.curr_MA = self.MA_condition(lst,count)
+        if self.pre_MA == False and self.curr_MA == True:
+            self.pre_MA = self.curr_MA
+            return True
+        self.pre_MA = self.curr_MA
+        return False
+
+    def MA_condition(self,lst,count):
+        if self.MA_result(lst,count,5) > self.MA_result(lst,count, 10) and \
+                self.MA_result(lst, count, 10) > self.MA_result(lst, count, 20) and \
+                self.MA_result(lst, count, 20) > self.MA_result(lst, count, 30):
+             #print(count)
+             return True
+        return False
+
+    def MA_result(self, lst,count, meanday):
+        meanlist = [i[2] for i in lst[count - meanday + 1:count + 1]]
+        return sum(meanlist) / meanday
+
+    def Sellcondition1(self, lst, high, count, maxday):
+        meanlist = [i[2] for i in lst[count - maxday + 1:count + 1]]
+        if high > max(meanlist):
+            return True
+        return False
+
+    def Sellcondition2(self, lst, high, low, close):
+        if high - low > 0:
+            if (close-low)/(high-close) < 0.2:
+                return True
+        return False
+
 if __name__ == '__main__':
     s = cashoptionstrategy()
-    df_stocklist = s.import_stocklist("cashoption1")
+    df_stocklist = s.import_stocklist("cashoption")
     print(df_stocklist)
     #s.setlooplist()
     s.looplist_historyreturn(df_stocklist)
