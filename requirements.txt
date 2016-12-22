@@ -1,2 +1,5 @@
 numpy
 pandas
+lxml
+astropy
+tushare
