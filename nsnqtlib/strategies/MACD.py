@@ -43,7 +43,7 @@ class macd(basestrategy):
         self.setprocedure(lst,count)
         rst = False
         if self.buy_condition1(count) and \
-            self.buy_condition2(count) and self.status:
+            self.buy_condition2(count) and self.status and self.buy_condition3(count):
             rst = True
         self.setstatus(lst,count)
         return rst
@@ -59,11 +59,17 @@ class macd(basestrategy):
             return True
         return False
     
+    def buy_condition3(self,count):
+        if self.difflist[count]>self.precross:
+            return True
+        return False
+    
     def setstatus(self,lst,count):
         if self.macdlist[count]<0 and \
             self.macdlist[count-1]>0:
             self.status = True
             self.count = count
+            self.precross = self.difflist[count]
         elif self.macdlist[count]>0 and \
             self.macdlist[count-1]<0:
             self.status = False
@@ -147,6 +153,7 @@ class macd(basestrategy):
         self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
         self.datalst = self.rehabilitation(self.datalst)
         self.setmacdlist(self.datalst)
+        self.precross = -1000
         return
     
     def setmacdlist(self,lst):
@@ -175,6 +182,11 @@ class macd(basestrategy):
         df.to_csv(filename)
         return 
     
+#     def save2mongo(self,db="macd",collection="processstatus"):
+#         db = "self.m.client.{}".format(db)
+#         db[collection].update()
+#         result = bulk.execute()
+#         pass
     
     def getprocedure(self,filename="procedure_records.csv"):
         '''"stock","date","data","s_ema","f_ema","diff","dem","macd","status"
