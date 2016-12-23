@@ -184,9 +184,9 @@ class macd(basestrategy):
     
     def saveprocedure2db(self,db="macd",collection="processstatus"):
         db = "self.m.client.{}".format(db)
-        bulk = eval("self.m.client.{}".format(db)).initialize_ordered_bulk_op()
+        bulk = eval("self.m.client.{}.{}".format(db,collection)).initialize_ordered_bulk_op()
         for line in self.lateststatus:
-            bulk[collection].find({'stock': line[0]}).upsert().update(\
+            bulk.find({'stock': line[0]}).upsert().update(\
                                                           {'$set': {'date': line[1],\
                                                                     'data': line[2],\
                                                                     's_ema': line[3],\
@@ -196,7 +196,7 @@ class macd(basestrategy):
                                                                     'macd': line[7],\
                                                                     'status': line[8],\
                                                                     }})
-        bulk[collection].execute()
+        bulk.execute()
         return
     
     def getprocedure(self,filename="procedure_records.csv"):
