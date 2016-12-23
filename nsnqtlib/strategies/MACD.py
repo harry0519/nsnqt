@@ -43,7 +43,7 @@ class macd(basestrategy):
         self.setprocedure(lst,count)
         rst = False
         if self.buy_condition1(count) and \
-            self.buy_condition2(count) and self.status and self.buy_condition3(count):
+            self.buy_condition2(count) and self.status :
             rst = True
         self.setstatus(lst,count)
         return rst
@@ -182,11 +182,22 @@ class macd(basestrategy):
         df.to_csv(filename)
         return 
     
-#     def save2mongo(self,db="macd",collection="processstatus"):
-#         db = "self.m.client.{}".format(db)
-#         db[collection].update()
-#         result = bulk.execute()
-#         pass
+    def saveprocedure2db(self,db="macd",collection="processstatus"):
+        db = "self.m.client.{}".format(db)
+        bulk = eval("self.m.client.{}".format(db)).initialize_ordered_bulk_op()
+        for line in self.lateststatus:
+            bulk.find({'stock': line[0]}).upsert().update(\
+                                                          {'$set': {'date': line[1],\
+                                                                    'data': line[2],\
+                                                                    's_ema': line[3],\
+                                                                    'f_ema': line[4],\
+                                                                    'diff': line[5],\
+                                                                    'dem': line[6],\
+                                                                    'macd': line[7],\
+                                                                    'status': line[8],\
+                                                                    }})
+        bulk.execute()
+        return
     
     def getprocedure(self,filename="procedure_records.csv"):
         '''"stock","date","data","s_ema","f_ema","diff","dem","macd","status"
@@ -261,6 +272,7 @@ if __name__ == '__main__':
     s.savetrading2csv("macd.csv")
     s.saveholding2csv("macdhold.csv")
     s.saveprocedure("procedure_records.csv")
+    s.saveprocedure2db()
     df = pd.read_csv('macd.csv')
     report = reportforms(df)
     report.cumulative_graph()

@@ -3,7 +3,9 @@ import easytrader
 import random
 from nsnqtlib.strategies.MACD import macd
 from click.decorators import password_option
-
+from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
+from  nsnqtlib.db.mongodb import MongoDB
+from datetime  import datetime
 class trade():
     def __init__(self,user="04yylxsxh@163.com",password="185284",zuhe="ZH995042"):
         self.user = easytrader.use('xq')
@@ -16,26 +18,44 @@ class trade():
         self.buylist = s.getprocedure(filename)
         return self.buylist
     
+    def justsellit(self,):
+        pass
+    
     def buyitnow(self):
+        localbackup = []
         balance = self.getbalance()
         lst = self.getposition()
         holdnum = len(lst)
-        triggerbuynum = len(self.buylist)
         leftmony = balance[0]["current_balance"]
         couldbynum = self.limitnum - holdnum
-        permoney = leftmony/couldbynum
-        if couldbynum >0 and triggerbuynum>couldbynum:
+        holdlst = [i["stock_code"][2:] for i in lst]
+        couldbuylst = [i for i in self.buylist if i not in holdlst]
+        triggerbuynum = len(couldbuylst)
+        
+        if couldbynum >0:
             permoney = leftmony/couldbynum
-            buylst = random.sample(self.buylist,couldbynum) 
+            if triggerbuynum>couldbynum:
+                buylst = random.sample(couldbuylst,couldbynum) 
+            else:
+                buylst = couldbuylst
         else:
-            buylst = self.buylist
+            buylst = []
         
         for stock in buylst:
             try:
                 t.buy(stock=stock,number=permoney,price=1)
+                localbackup.append({"stock":stock,"buymoney":permoney,"date":datetime.today().strftime('%Y-%m-%d'),"status":"HOLD"})
             except:
                 print ("buy {} failed!!!!".format(stock))
-            
+        return localbackup
+    
+    def savebackup2db(self,data,db="macd",collection="operatequeue"):
+        if not data:return
+        self.m = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
+        db = eval('self.m.client.{}'.format(db))
+        db[collection].insert_many(data)
+        return
+    
     def getbalance(self):
         '''output:[{ 'asset_balance': '资产总值','current_balance': '当前余额','enable_balance': '可用金额','market_value': '证券市值',
                     'money_type': '币种','pre_interest': '预计利息' }]
@@ -77,12 +97,16 @@ class trade():
     
     def adjust_weight(self,stock='000001',weight=10):
         self.user.adjust_weight(stock, weight)    
-
+    
 if __name__ == '__main__':
     t = trade()
+#     print (t.user.session.get("https://xueqiu.com/p/update?action=holdings&symbol=ZH995042").text)
     t.cancelall()
     t.getbuylist()
-    t.buyitnow()
+    bylst = t.buyitnow()
+    print (bylst)
+    t.savebackup2db(bylst)
+    
 
 
 
