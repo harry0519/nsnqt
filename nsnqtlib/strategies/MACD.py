@@ -183,8 +183,9 @@ class macd(basestrategy):
         return 
     
     def saveprocedure2db(self,db="macd",collection="processstatus"):
+        self.lateststatus
         db = "self.m.client.{}".format(db)
-        bulk = eval("self.m.client.{}.{}".format(db,collection)).initialize_ordered_bulk_op()
+        bulk = db[collection].initialize_ordered_bulk_op()
         for line in self.lateststatus:
             bulk.find({'stock': line[0]}).upsert().update(\
                                                           {'$set': {'date': line[1],\
