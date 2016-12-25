@@ -37,15 +37,16 @@ class trade():
             stock = i["stock"]
             for xq in position:
                 if stock == xq["stock_code"][2:]:
-                    print (stock)
                     rate = (i["buymoney"] - xq["market_value"])/i["buymoney"]
+                    print ("check stock:{}       rate:{}".format(stock,rate))
+                    bias = 1
                     if stoploss:
-                        rate = currentdata[stock][4]/currentdata[stock][1]*rate
-                    self.trysell(stock,rate,stoploss)
+                        bias = currentdata[stock][4]/currentdata[stock][1]
+                    self.trysell(stock,rate,stoploss,bias=bias)
                     break
     
-    def trysell(self,stock,rate,stoploss=False):
-        if stoploss and rate <=-0.1:
+    def trysell(self,stock,rate,stoploss=False,bias=1):
+        if stoploss and rate/bias <=-0.1:
             self.sell(stock=stock,number=100,price=0.55)
             self.updateholdlst(stock)
         elif rate >= 0.1:
@@ -66,7 +67,7 @@ class trade():
         holdlst = [i["stock_code"][2:] for i in lst]
         couldbuylst = [i for i in self.buylist if i not in holdlst]
         triggerbuynum = len(couldbuylst)
-        print (self.buylist)
+        print ("could buy list:{}".format(self.buylist))
         if couldbynum >0:
             permoney = leftmony/couldbynum
             if triggerbuynum>couldbynum:
@@ -140,6 +141,9 @@ class trade():
 def parseargs():
     parser = argparse.ArgumentParser() 
     parser.add_argument('action', type=str)
+    parser.add_argument("-s", "--stoploss", action="store",type=str, 
+                      dest="stoploss", 
+                      help="stoploss now")
     args = parser.parse_args() 
     return args
     
@@ -147,13 +151,17 @@ if __name__ == '__main__':
     t = trade()
     if parseargs().action == "sell":
         t.connetdb()
-        t.justsellit()
+        if  parseargs.stoploss: 
+            t.justsellit(stoploss=True)
+        else:
+            t.justsellit()
+        
     elif parseargs().action == "buy":
 #         print (t.user.session.get("https://xueqiu.com/p/update?action=holdings&symbol=ZH995042").text)
 #         t.cancelall()
         t.getbuylist()
         bylst = t.buyitnow()
-        print (bylst)
+        print ("buy list:{}".format(bylst))
         t.savebackup2db(bylst)
     
 
