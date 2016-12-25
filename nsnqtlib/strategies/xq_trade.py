@@ -6,6 +6,9 @@ from click.decorators import password_option
 from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
 from  nsnqtlib.db.mongodb import MongoDB
 from datetime  import datetime
+import tushare as ts
+import argparse
+
 class trade():
     def __init__(self,user="04yylxsxh@163.com",password="185284",zuhe="ZH995042"):
         self.user = easytrader.use('xq')
@@ -13,13 +16,45 @@ class trade():
         self.buylist = []
         self.limitnum = 20
     
+    def getcurrentdata(self):
+        '''code：代码, name:名称 ,changepercent:涨跌幅 , trade:现价 ,open:开盘价 ,high:最高价, low:最低价, settlement:昨日收盘价 ,
+           volume:成交量 ,turnoverratio:换手率 ,amount:成交量 ,per:市盈率 ,pb:市净率, mktcap:总市值 ,nmc:流通市值
+        '''
+        out = ["code","trade","open","high","low","settlement"]
+        rst = ts.get_today_all()
+        return rst[out]
+    
     def getbuylist(self,filename="procedure_records.csv"):
         s = macd()
-        self.buylist = s.getprocedure(filename)
+        self.buylist = s.getprocedure(isdb=True)
         return self.buylist
     
-    def justsellit(self,):
-        pass
+    def justsellit(self,db="macd",collection="operatequeue",stoploss=False):
+        currentdata = { i[0]:i for i in self.getcurrentdata().values}
+        rst = self.m.read_data(db,collection,filt={"status":"HOLD"})
+        position = self.getposition()
+        for i in rst:
+            stock = i["stock"]
+            for xq in position:
+                if stock == xq["stock_code"][2:]:
+                    print (stock)
+                    rate = (i["buymoney"] - xq["market_value"])/i["buymoney"]
+                    if stoploss:
+                        rate = currentdata[stock][4]/currentdata[stock][1]*rate
+                    self.trysell(stock,rate,stoploss)
+                    break
+    
+    def trysell(self,stock,rate,stoploss=False):
+        if stoploss and rate <=-0.1:
+            self.sell(stock=stock,number=100,price=0.55)
+            self.updateholdlst(stock)
+        elif rate >= 0.1:
+            self.sell(stock=stock,number=100,price=0.55)
+            self.updateholdlst(stock)
+
+    def updateholdlst(self,stock,db="macd",collection="operatequeue"):
+        data = {'$set': {'status': 'SELL'}}
+        self.m.update_data(data,db,collection,filt={"stock":stock})
     
     def buyitnow(self):
         localbackup = []
@@ -31,7 +66,7 @@ class trade():
         holdlst = [i["stock_code"][2:] for i in lst]
         couldbuylst = [i for i in self.buylist if i not in holdlst]
         triggerbuynum = len(couldbuylst)
-        
+        print (self.buylist)
         if couldbynum >0:
             permoney = leftmony/couldbynum
             if triggerbuynum>couldbynum:
@@ -49,9 +84,12 @@ class trade():
                 print ("buy {} failed!!!!".format(stock))
         return localbackup
     
+    def connetdb(self):
+        self.m = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
+        return self.m
+    
     def savebackup2db(self,data,db="macd",collection="operatequeue"):
         if not data:return
-        self.m = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
         db = eval('self.m.client.{}'.format(db))
         db[collection].insert_many(data)
         return
@@ -88,7 +126,6 @@ class trade():
         for i in entrust:
             flash_entrust = [i for i in self.getentrust() if i["entrust_status"] == "已报" and i["entrust_bs"] == "买入"]
             entrust_no = flash_entrust[0]["entrust_no"]
-            print (entrust_no)
             self.cancel(entrust_no)
         return 
         
@@ -97,15 +134,27 @@ class trade():
     
     def adjust_weight(self,stock='000001',weight=10):
         self.user.adjust_weight(stock, weight)    
+
+
+
+def parseargs():
+    parser = argparse.ArgumentParser() 
+    parser.add_argument('action', type=str)
+    args = parser.parse_args() 
+    return args
     
 if __name__ == '__main__':
     t = trade()
-#     print (t.user.session.get("https://xueqiu.com/p/update?action=holdings&symbol=ZH995042").text)
-    t.cancelall()
-    t.getbuylist()
-    bylst = t.buyitnow()
-    print (bylst)
-    t.savebackup2db(bylst)
+    if parseargs().action == "sell":
+        t.connetdb()
+        t.justsellit()
+    elif parseargs().action == "buy":
+#         print (t.user.session.get("https://xueqiu.com/p/update?action=holdings&symbol=ZH995042").text)
+#         t.cancelall()
+        t.getbuylist()
+        bylst = t.buyitnow()
+        print (bylst)
+        t.savebackup2db(bylst)
     
 
 

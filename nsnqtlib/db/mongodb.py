@@ -56,6 +56,20 @@ class MongoDB(BaseDB):
         db = eval("self.client.{}".format(db))
         return db[collection].find(filt)
     
+    def update_data(self,data,db,collection,filt={},isupsert=False): 
+        '''
+        colections:  collection in mongodb ,which your want to get data from
+        filt: filter condition
+        '''
+        db = eval("self.client.{}".format(db))
+        bulk = db.initialize_ordered_bulk_op()
+        if isupsert:
+            bulk.find(filt).upsert().update(data)
+        else:
+            bulk.find(filt).update(data)
+        bulk.execute()
+        return 
+    
     def format2dataframe(self,query,out=[]):
         '''
         query:your source data ,should be a list with dict

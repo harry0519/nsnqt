@@ -2,6 +2,7 @@
 from nsnqtlib.strategies.strategy import  basestrategy,reportforms
 import pandas as pd
 import tushare as ts
+import traceback
 
 class macd(basestrategy):
     '''
@@ -200,20 +201,24 @@ class macd(basestrategy):
         bulk.execute()
         return
     
-    def getprocedure(self,filename="procedure_records.csv"):
+    def getprocedure(self,filename="procedure_records.csv",isdb=False,collection="processstatus",db="macd"):
         '''"stock","date","data","s_ema","f_ema","diff","dem","macd","status"
         '''
         buy = []
-        df = pd.read_csv(filename)
+        out=["stock","date","data","s_ema","f_ema","diff","dem","macd","status"]
+        if isdb:
+            df = self._getdata(collection, db,out=out,isfilt = False)[out]
+        else:
+            df = pd.read_csv(filename)[out]
         currentdata = { i[0]:i for i in self.getcurrentdata().values}
         for i in df[df.status == True].values:
             try:
-                stock = i[1].split(".")[0]
-                s_ema = i[4]
-                f_ema = i[5]
-                macd = i[6]
-                dem = i[7]
-                close = i[3][2]
+                stock = i[0].split(".")[0]
+                s_ema = i[3]
+                f_ema = i[4]
+                macd = i[7]
+                dem = i[6]
+                close = i[2][2]
                 c_close = currentdata[stock][1]
                 
                 n_s_ema = (s_ema*(self.emaslow-1)+ 2*c_close)/(self.emaslow+1)
@@ -224,7 +229,8 @@ class macd(basestrategy):
                 if n_macd >0 and macd <0 and n_diff<0:
                     buy.append(stock) 
             except:
-                print (stock)
+                traceback.print_exc()
+                print (i)
         return buy
             
             

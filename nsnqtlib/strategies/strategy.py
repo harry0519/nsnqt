@@ -37,9 +37,10 @@ class basestrategy(object):
             self.looplist = lst
         return self.looplist
     
-    def _getdata(self,collection="600455.SH",db="ml_security_table"):   
-        query = self.m.read_data(db,collection,filt={"date":{"$gt": self.startdate}})
-        out = self.formatlist
+    def _getdata(self,collection="600455.SH",db="ml_security_table",out=[],isfilt=True,filt={}):
+        if not out:out = self.formatlist
+        if isfilt and not filt: filt = {"date":{"$gt": self.startdate}}
+        query = self.m.read_data(db,collection,filt=filt)
         return self.formatquery(query,out)
     
     def formatquery(self,query,out):
