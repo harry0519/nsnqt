@@ -151,7 +151,7 @@ if __name__ == '__main__':
     t = trade()
     if parseargs().action == "sell":
         t.connetdb()
-        if  parseargs.stoploss: 
+        if  parseargs().stoploss: 
             t.justsellit(stoploss=True)
         else:
             t.justsellit()
