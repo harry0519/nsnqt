@@ -37,7 +37,7 @@ class trade():
             stock = i["stock"]
             for xq in position:
                 if stock == xq["stock_code"][2:]:
-                    rate = (i["buymoney"] - xq["market_value"])/i["buymoney"]
+                    rate = xq["market_value"]/i["buymoney"]
                     print ("check stock:{}       rate:{}".format(stock,rate))
                     print (i)
                     print (xq)
@@ -49,10 +49,10 @@ class trade():
                     break
     
     def trysell(self,stock,rate,stoploss=False,bias=1):
-        if stoploss and rate/bias <=-0.1:
+        if stoploss and rate/bias <=0.9:
             self.sell(stock=stock,number=100,price=0.55)
             self.updateholdlst(stock)
-        elif rate >= 0.1:
+        elif rate >= 1.1:
             self.sell(stock=stock,number=100,price=0.55)
             self.updateholdlst(stock)
 
