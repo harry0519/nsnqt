@@ -39,6 +39,9 @@ class trade():
                 if stock == xq["stock_code"][2:]:
                     rate = (i["buymoney"] - xq["market_value"])/i["buymoney"]
                     print ("check stock:{}       rate:{}".format(stock,rate))
+                    print (i)
+                    print (xq)
+                    print ("********************")
                     bias = 1
                     if stoploss:
                         bias = currentdata[stock][4]/currentdata[stock][1]
