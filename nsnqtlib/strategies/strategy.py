@@ -188,6 +188,7 @@ class reportforms(object):
             for d in holds[:]:
                 sell_date = d[0][2]
                 if sell_date <= date : 
+                    print (d)
                     holds.remove(d)
                     leftmoney += d[1]*(d[0][4]+1-0.0015)  
                     totalmoney += d[1]*(d[0][4]-0.0015)

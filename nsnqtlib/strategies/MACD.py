@@ -273,7 +273,7 @@ class realtimecheck():
 
         
 if __name__ == '__main__':
-    s = macd()
+    s = macd(startdate=(2011, 1, 1))
     s.setlooplist()
     s.looplist_historyreturn()
     s.savetrading2csv("macd.csv")
