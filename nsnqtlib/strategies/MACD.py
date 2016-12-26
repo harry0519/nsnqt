@@ -44,6 +44,7 @@ class macd(basestrategy):
         self.setprocedure(lst,count)
         rst = False
         if self.buy_condition1(count) and \
+            self.buy_condition3(count) and \
             self.buy_condition2(count) and self.status :
             rst = True
         self.setstatus(lst,count)
@@ -121,13 +122,13 @@ class macd(basestrategy):
         buy_date = self.timestamp2date(buyrecord[0][0])
         collection = buyrecord[2]
         feature = buyrecord[3]
-#         if self.sell_condition(lst,count):
-#             return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price,feature]
-        
-        if self.stopgain_condition(buy_price,currentday_high,gain_grads):
-            return True,[collection,buy_date,sell_date,hold_days,gain_grads,feature]
-        elif self.stoploss_condition(buy_price,currentday_low,loss_grads):
+        if self.sell_condition(lst,count):
             return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price,feature]
+        
+#         if self.stopgain_condition(buy_price,currentday_high,gain_grads):
+#             return True,[collection,buy_date,sell_date,hold_days,gain_grads,feature]
+#         elif self.stoploss_condition(buy_price,currentday_low,loss_grads):
+#             return True,[collection,buy_date,sell_date,hold_days,(close-buy_price)/buy_price,feature]
         return False,None
     
     def sell_condition(self,lst,count):
@@ -283,7 +284,7 @@ if __name__ == '__main__':
     df = pd.read_csv('macd.csv')
     report = reportforms(df)
     report.cumulative_graph()
-    report.positiongain(5)
+    report.positiongain(20)
     buy = s.getprocedure('procedure_records.csv')
     print (buy)
      
