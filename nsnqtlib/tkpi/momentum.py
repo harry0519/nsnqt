@@ -1,7 +1,17 @@
 
 
 import numpy as np
+import pandas as pd
 
+
+#Moving average
+def MA(data=[], timeperiod=10):
+    ma = []
+    ma_a = pd.DataFrame(data,columns=['MA']).rolling(window=timeperiod).mean()
+    for i in ma_a['MA']:
+        ma.append(i)
+    return ma
+    
 #MACD related indicators
 #Moving average: there will be unstable period in the beginning
 #input: list of close price
@@ -73,5 +83,7 @@ def MDD(worth=[],period=0):
 #RSI
 #BIAS
 
-
+if __name__ == '__main__':
+    test = [11.9,10.8,20.0,9.1,7.9,4.1,31.2,16,29.9,15.1,11,12]
+    print(MA(test,3))
     
