@@ -1,6 +1,10 @@
 
 
+import numpy as np
+
+#MACD related indicators
 #Moving average: there will be unstable period in the beginning
+#input: list of close price
 def EMA(close=[], timeperiod=10):
     ema = []
     current = close[0]
@@ -29,3 +33,45 @@ def MACD(close=[], fastperiod=12, slowperiod=26, signalperiod=9):
         macd.append(2*(dif[i]-dea[i]))
     return macd
 
+    
+# 夏普比率： 平均收益率/收益率标准差
+#Sharpe Ratio: Sharpe ratio = Excess return / Standard deviation
+#input: 
+#    erp: Portfolio expected return rate 
+#         within fixed timeperiod (e.g.yearly/monthly) 
+#    rf: risk-free/expect rate of interest  
+def sharpe(erp=[], rf=0):
+    a = np.array(erp)
+    return (np.mean(a)-rf)/np.std(a,ddof=1)
+
+#最大回撤率
+#Max draw down
+#input:
+#    worth: net worth ratio history
+#    period: To be added....
+#         >0 means short-term MADD within input period -> worth list
+def MDD(worth=[],period=0):
+    current_mdd = mdd = 0
+    for i in range(len(worth)):
+        if period>0 and i>period: 
+            j = i-period
+        else: 
+            j = 0
+    
+        if i > 0:
+            current_mdd = max(worth[int(j):int(i)])-worth[i]
+                              
+        if mdd < current_mdd:
+            mdd = current_mdd
+    return mdd
+
+
+    
+#To be added:
+#DMI related indicators
+#KDJ
+#RSI
+#BIAS
+
+
+    
