@@ -160,6 +160,7 @@ class reportforms(object):
         datelist = [i.strftime('%Y-%m-%d') for i in pd.date_range(self.start, self.end)]
         result = {d:[] for d in datelist}
         gains = {d:0 for d in datelist}
+
         for i in self.df.values:
             buydate = i[1]
             result[buydate].append(i)
@@ -171,16 +172,16 @@ class reportforms(object):
                 buymoney = leftmoney/(piece-currentholdnum)
                 if current_day_could_buy_num + currentholdnum <= piece:
                     leftmoney = leftmoney - buymoney*current_day_could_buy_num
-                    holds.extend([(i,buymoney) for i in result[date]])
+                    holds.extend([([j for j in i],buymoney) for i in result[date]])
                 else:
                     leftmoney = 0
-                    holds.extend([(i,buymoney) for i in random.sample(result[date],piece-currentholdnum)])
+                    holds.extend([([j for j in i],buymoney) for i in random.sample(result[date],piece-currentholdnum)])
             for d in holds[:]:
                 sell_date = d[0][2]
-                if sell_date >= date : 
-                    holds.remove(d)
+                if date >= sell_date:
                     leftmoney += d[1]*(d[0][4]+1)  
                     totalmoney += d[1]*d[0][4]
+                    holds.remove(d)
             gains[date] = totalmoney
             
         newdf = pd.DataFrame(data=[gains[i] for i in datelist], index=datelist,columns=["totalmoney",])
