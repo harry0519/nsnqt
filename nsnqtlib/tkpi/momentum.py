@@ -95,23 +95,23 @@ def daily_accumulated(principal,trade_history):
         principal: initial invest money
         trade_history: stock buy-in and sell-out history. format should be
             "index(title is none)","stock","buy_date","sell_date","holddays","profit","buy_money"
-            date format: yyyy/m/d
+            date format: %Y-%m-%d
     output:
         dict:{date:total_money}   !!no order for dict
               Daily accumulated history during whole trade
     '''
     df = trade_history[["stock","buy_date","sell_date","holddays","profit","buy_money"]]
     
-    start_date = min(dt.datetime.strptime(i, "%Y/%m/%d") for i in df["buy_date"].values)
-    end_date = max(dt.datetime.strptime(i, "%Y/%m/%d") for i in df["sell_date"].values)
+    start_date = min(dt.datetime.strptime(i, "%Y-%m-%d") for i in df["buy_date"].values)
+    end_date = max(dt.datetime.strptime(i, "%Y-%m-%d") for i in df["sell_date"].values)
 
-    datelist = [i.strftime('%Y/%m/%d') for i in pd.date_range(start_date, end_date)]
+    datelist = [i.strftime('%Y-%m-%d') for i in pd.date_range(start_date, end_date)]
     sell_history = {d:[] for d in datelist}
     current_money = {d:0 for d in datelist}
 
     for i in df.values:
         selldate = i[2]
-        sell_history[dt.datetime.strptime(selldate,"%Y/%m/%d").strftime("%Y/%m/%d")].append(i)
+        sell_history[dt.datetime.strptime(selldate,"%Y-%m-%d").strftime("%Y-%m-%d")].append(i)
 
     current = principal
     for date in datelist:
@@ -139,7 +139,7 @@ def monthly_accumulated(principal,trade_history):
         principal: initial invest money
         trade_history: stock buy-in and sell-out history. format should be
             "index(title is none)","stock","buy_date","sell_date","holddays","profit","buy_money"
-            date format: yyyy/m/d
+            date format: %Y-%m-%d
     output:
         dict:{date:[total_money,growth_ratio,annual_yield]}   !!no order for dict
               Monthly accumulated history during whole trade
@@ -149,16 +149,16 @@ def monthly_accumulated(principal,trade_history):
     start_date = date_list[0]
     end_date = date_list[-1]
 
-    enddatelist = [i.strftime('%Y/%m/%d') \
+    enddatelist = [i.strftime('%Y-%m-%d') \
                 for i in pd.date_range(start_date, end_date, freq='M')]
-    monthlist = [i.strftime('%Y/%m') \
+    monthlist = [i.strftime('%Y-%m') \
                 for i in pd.date_range(start_date, end_date, freq='M')]
     monthly_money = {d:[0,0,0] for d in monthlist}
 
     last_money = principal
     for date in enddatelist:
-        date_time = dt.datetime.strptime(date,"%Y/%m/%d")
-        month = date_time.strftime("%Y/%m")
+        date_time = dt.datetime.strptime(date,"%Y-%m-%d")
+        month = date_time.strftime("%Y-%m")
         total_money = daily[date]
         growth = total_money/last_money-1
         annual_yield = growth * 365 / \
@@ -184,7 +184,7 @@ def evaluation_m(principal,trade_history):
         principal: initial invest money
         trade_history: stock buy-in and sell-out history. format should be
             "index(title is none)","stock","buy_date","sell_date","holddays","profit","buy_money"
-            date format: yyyy/m/d
+            date format: %Y-%m-%d
     output:
         Sharpe: sharpe ratio
         MDD:max draw down
@@ -206,5 +206,4 @@ if __name__ == '__main__':
     #print(MA(test,3))
     df = pd.read_csv('positiongain.csv')
     print(evaluation_m(100,df))
-    
-'''
+'''   

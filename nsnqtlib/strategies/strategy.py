@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 from  nsnqtlib.db.mongodb import MongoDB
+from nsnqtlib.tkpi.momentum import *
 import time
 import datetime
 import pandas as pd
@@ -160,6 +161,7 @@ class reportforms(object):
         datelist = [i.strftime('%Y-%m-%d') for i in pd.date_range(self.start, self.end)]
         result = {d:[] for d in datelist}
         gains = {d:0 for d in datelist}
+        trade_history = []
 
         for i in self.df.values:
             buydate = i[1]
@@ -182,12 +184,37 @@ class reportforms(object):
                     leftmoney += d[1]*(d[0][4]+1)  
                     totalmoney += d[1]*d[0][4]
                     holds.remove(d)
+                    
+                    stock_i=d[0]
+                    stock_i.append(d[1])
+                    trade_history.append(stock_i)
+                    break
+                    
             gains[date] = totalmoney
-            
+        
+        resultdf = pd.DataFrame(trade_history,columns=["stock","buy_date","sell_date","holddays","profit","buy_money"])
+        return evaluation_m(totalmoney,resultdf) 
+        
+        '''
         newdf = pd.DataFrame(data=[gains[i] for i in datelist], index=datelist,columns=["totalmoney",])
         newdf["date"] = newdf.index
         newdf.plot(x="date", y="totalmoney", kind='area')
         plt.savefig("positiongain_from_{}_to_{}.png".format(self.start,self.end))
+        plt.show()
+        '''
+    def piece_evaluation_graph(self, min_piece=2, max_piece=200):
+        result = []
+        piece_range = []
+
+        for i in range(min_piece,max_piece):
+            piece_range.append(i)
+            sharpe,MDD = self.positiongain(i)
+            result.append([sharpe,MDD])
+            
+        newdf = pd.DataFrame(result,index=piece_range,columns=["sharpe","MDD"])
+        print(newdf)
+        newdf["range"] = newdf.index
+        newdf.plot(x="range",y=["sharpe","MDD"], kind="line")
         plt.show()
     
     def cumulative_graph(self,):
