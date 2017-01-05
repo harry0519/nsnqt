@@ -64,6 +64,25 @@ class StockIndicator(object):
         self.emafast = 12
         self.demday = 9
     
+    def generateindics(self):
+        rst = []
+        for count in range(len(self.datalst)):
+            date = self.datalst[count][0]
+            filt = {"date":date}
+            data = {'$set': {'date':str(date).split(" ")[0]}}
+            indics = self.mapindicwithfunc(self.datalst,count)
+            for k,v in indics:
+                data['$set'][k] = v
+            rst.append([data,filt])
+        return rst
+    
+    def updateindics2db(self,datas,db,collection):
+        bulk = db[collection].initialize_ordered_bulk_op()
+        for data,filt in datas:
+            bulk.find(filt).upsert().update(data)
+        bulk.execute()
+        return 
+    
     def mapindicwithfunc(self,lst,count,oldnum=300):
         # "date","volume","close","high","low","open","pre_close"
         indicators=[]
@@ -81,15 +100,17 @@ class StockIndicator(object):
             indicators.extend([(vol_m.format(i),self.getvols(lst,count,i)) for i in voldays])
             indicators.extend(self.getcurrentday_k(lst,count))
             
-            indicators.extend(self.getmacdrelates(lst,count))
+#             indicators.extend(self.getmacdrelates(lst,count))
         return indicators
     
     def getvols(self,lst,count,days):
-        start = lambda count:count-days if count >=days else 0 
+        end = count+1
+        if end>=days:start = end-days
+        else: start=0
         vol = 0
-        for i in lst[start:count]:
+        for i in lst[start:end]:
             vol += i[1]
-        return vol/(count-start)
+        return vol/(end-start)
 
     def getfuture(self,lst,count,index,f_day):
         try: rst = lst[count+f_day][index]
@@ -97,14 +118,15 @@ class StockIndicator(object):
         return rst
     
     def getyearindic(self,lst,count,oldnum=300):
-        
-        start = lambda count:count-oldnum if count >=oldnum else 0
-        h_queue = [i[3] for i in lst[start:count]]
-        l_queue = [i[4] for i in lst[start:count]]
+        end = count+1
+        if end >=oldnum:start = end-oldnum
+        else: start=0
+        h_queue = [i[3] for i in lst[start:end]]
+        l_queue = [i[4] for i in lst[start:end]]
         high = max(h_queue)
         low = min(l_queue)
-        h_dist = count-h_queue.index(high)-1
-        l_dist = count-l_queue.index(low)-1
+        h_dist = count-start-h_queue.index(high)
+        l_dist = count-start-l_queue.index(low)
         
         rst = [("y_pri_high",high),("y_pri_low",low),("y_pri_h_dist",h_dist),("y_pri_l_dist",l_dist)]
         return rst
@@ -137,7 +159,6 @@ class StockIndicator(object):
 ###########################################################################################     
     def setenv(self,collection):
         self.count = 0
-        self.indictors = []
         self.collection = collection
         data = self._getdata(collection)
         self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
@@ -348,7 +369,9 @@ class StockIndicator(object):
             return base+index
     
 if __name__ == '__main__':
-    s= StockIndicator()
+    s= StockIndicator(init=True)
+    s.setenv("600455.SH")
+    s.generateindics()
     '''
     data=random.sample(range(100),100)
     print(data)
@@ -357,11 +380,11 @@ if __name__ == '__main__':
     for i in data:
         print (s.getnewindex(datas,i,10))
     '''
-    a = [[0,1,3],[0,1,5],[0,1,110],[0,1,98],[0,1,35],[0,1,75],[0,1,30],[0,1,16],[0,1,8],\
-         [0,1,9],[0,1,94],[0,1,13],[0,1,18],[0,1,175],[0,1,565],[0,1,511],[0,1,543],[0,1,531],\
-         [0,1,115],[0,1,4],[0,1,5],[0,1,23],[0,1,19],[0,1,18],[0,1,15],[0,1,43],[0,1,6]]
-    print(s.setmacdlist(a))
-    print(s.MACD_list(a))
+#     a = [[0,1,3],[0,1,5],[0,1,110],[0,1,98],[0,1,35],[0,1,75],[0,1,30],[0,1,16],[0,1,8],\
+#          [0,1,9],[0,1,94],[0,1,13],[0,1,18],[0,1,175],[0,1,565],[0,1,511],[0,1,543],[0,1,531],\
+#          [0,1,115],[0,1,4],[0,1,5],[0,1,23],[0,1,19],[0,1,18],[0,1,15],[0,1,43],[0,1,6]]
+#     print(s.setmacdlist(a))
+#     print(s.MACD_list(a))
     
     
     
