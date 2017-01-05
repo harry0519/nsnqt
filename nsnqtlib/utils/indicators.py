@@ -7,50 +7,134 @@ import datetime
 
 '''
 指标说明：：
-macd：    
+macd：   指数平滑异同平均线
 ema12： 12日价格指数平均数，EMAtoday=α * Pricetoday + ( 1 - α ) * EMAyesterday，α为平滑指数，一般取作2/(N+1)
 ema26：26日价格指数平均数
 diff12_26： 12日价格指数平均数和26日价格指数平均数的差离值，DIF = EMA（12） - EMA（26）
 dem9：9日离差平均值，此值又名DEA或DEM
+cross_dist： macd交叉点距离现在的交易日数
+
 vol_m1：当天成交量
 vol_m5：过去五个交易日平均成交量
 vol_m10：过去10个交易日平均成交量
 vol_m20：过去20个交易日平均成交量
 vol_m30：过去30个交易提平均成交量
+
 y_pri_high：过去300个交易日价格最高值
 y_pri_low：过去300个交易日价格最低值
 y_pri_h_dist：过去300个交易日价格最高日和现在的时间跨度
 y_pri_l_dist过去300个交易日价格最低日和现在的时间跨度
+
 c_rate_h：当日最高价对于最高价和最低价均值的涨幅
 c_rate_l：当日最低价对于最高价和最低价均值的涨幅
 c_rate_o：当日开盘价对于最高价和最低价均值的涨幅
 c_rate_c：当日收盘价对于最高价和最低价均值的涨幅
 c_rate_m：当日最高价和最低价均值的涨跌幅
 
+f_pri_c1：买入第一天的收盘价
+f_pri_c2：买入第二天的收盘价
+f_pri_c3：买入第三天的收盘价
+f_pri_c5：买入第五天的收盘价
+f_pri_c7：买入第七天的收盘价
+f_pri_c9：买入第九天的收盘价
+f_pri_c11：买入第十一天的收盘价
+f_pri_c13：买入第十三天的收盘价
+f_pri_c15：买入第十五天的收盘价
+f_pri_h1：买入第一天的最高价
+f_pri_h2：买入第二天的最高价
+f_pri_h3：买入第三天的最高价
+f_pri_h5：买入第五天的最高价
+f_pri_h7：买入第七天的最高价
+f_pri_h9：买入第九天的最高价
+f_pri_h11：买入第十一天的最高价
+f_pri_h13：买入第十三天的最高价
+f_pri_h15：买入第十五天的最高价
 '''
-
-
 
 class StockIndicator(object):
     '''
     various kinds of stock indicator method
     '''
-    def __init__(self,startdate=(2011, 1, 1),end=(),):
+    def __init__(self,startdate=(2011, 1, 1),end=(),init=False):
+        self.isinit = init
         self.m = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
         self.formatlist = ["date","volume","close","high","low","open","pre_close"]
         self.startdate = datetime.datetime( *startdate,0,0,0,0)
         self.emaslow  = 26
         self.emafast = 12
         self.demday = 9
-        self.recursive_indicator = ["macd","ema12","ema26","diff12_26","dem9",]
-        self.independent_indicator = ["vol_m1","vol_m5","vol_m10","vol_m20",
-                                      "vol_m30","y_pri_high", "y_pri_low","y_pri_h_dist",
-                                      "y_pri_l_dist","c_rate_h","c_rate_l","c_rate_o",
-                                      "c_rate_c","c_rate_m",]
-        self.future = ["f_pri_c1","f_pri_c2","f_pri_c3","f_pri_c5","f_pri_c7","f_pri_c9","f_pri_c11","f_pri_c13","f_pri_c15",
-                       "f_pri_h1","f_pri_h2","f_pri_h3","f_pri_h5","f_pri_h7","f_pri_h9","f_pri_h11","f_pri_h13","f_pri_h15",]
     
+    def mapindicwithfunc(self,lst,count,oldnum=300):
+        # "date","volume","close","high","low","open","pre_close"
+        indicators=[]
+        futuredays=[1,2,3,5,7,9,11,13,15]
+        voldays = [1,5,10,20,30]
+        vol_m = "vol_m{}"
+        f_pri_h ="f_pri_h{}"
+        h_index = 3
+        f_pri_c ="f_pri_c{}"
+        c_index = 2
+        if self.isinit or count >=oldnum:
+            indicators.extend(self.getyearindic(lst,count,oldnum))
+            indicators.extend([(f_pri_h.format(i),self.getfuture(lst,count,h_index,i)) for i in futuredays])
+            indicators.extend([(f_pri_c.format(i),self.getfuture(lst,count,c_index,i)) for i in futuredays])
+            indicators.extend([(vol_m.format(i),self.getvols(lst,count,i)) for i in voldays])
+            indicators.extend(self.getcurrentday_k(lst,count))
+            
+            indicators.extend(self.getmacdrelates(lst,count))
+        return indicators
     
+    def getvols(self,lst,count,days):
+        start = lambda count:count-days if count >=days else 0 
+        vol = 0
+        for i in lst[start:count]:
+            vol += i[1]
+        return vol/(count-start)
+
+    def getfuture(self,lst,count,index,f_day):
+        try: rst = lst[count+f_day][index]
+        except: rst = 0
+        return rst
+    
+    def getyearindic(self,lst,count,oldnum=300):
+        
+        start = lambda count:count-oldnum if count >=oldnum else 0
+        h_queue = [i[3] for i in lst[start:count]]
+        l_queue = [i[4] for i in lst[start:count]]
+        high = max(h_queue)
+        low = min(l_queue)
+        h_dist = count-h_queue.index(high)-1
+        l_dist = count-l_queue.index(low)-1
+        
+        rst = [("y_pri_high",high),("y_pri_low",low),("y_pri_h_dist",h_dist),("y_pri_l_dist",l_dist)]
+        return rst
+        
+    def getcurrentday_k(self,lst,count):
+        preclose = lst[count][6]
+        close = lst[count][2]
+        high = lst[count][3]
+        low = lst[count][4]
+        openpri = lst[count][5]
+        
+        middle = (high+low)/2
+        c_rate_h = (high-middle)/preclose
+        c_rate_l = (low-middle)/preclose
+        c_rate_o = (openpri-middle)/preclose
+        c_rate_c = (close-middle)/preclose
+        c_rate_m = (middle-preclose)/preclose
+        rst = [("c_rate_h",c_rate_h),("c_rate_l",c_rate_l),
+               ("c_rate_o",c_rate_o),("c_rate_c",c_rate_c),
+               ("c_rate_m",c_rate_m)]
+        
+        return rst
+    
+    def getmacdrelates(self,lst,count):
+        keys = ["macd","ema12","ema26","diff12_26","dem9","cross_dist"]
+        return [(),]
+ 
+
+
+###########################################################################################     
     def setenv(self,collection):
         self.count = 0
         self.indictors = []
