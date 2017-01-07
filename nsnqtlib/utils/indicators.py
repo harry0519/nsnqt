@@ -4,6 +4,7 @@ from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
 from  nsnqtlib.db.mongodb import MongoDB
 import pandas as pd
 import datetime
+import logging 
 
 '''
 指标说明：：
@@ -86,7 +87,7 @@ class StockIndicator(object):
     def updateallstocks2db(self):
         db = self.m.client.stockdatas
         for collection in self.looplist:
-            print ("udate stock:{}".format(collection))
+            logging.info("udate stock:{}".format(collection))
             self.setenv(collection)
             indics = self.generateindics()
             self.updateindics2db(indics,db,collection)
@@ -151,6 +152,7 @@ class StockIndicator(object):
         high = lst[count][3]
         low = lst[count][4]
         openpri = lst[count][5]
+        if not preclose:preclose = openpri
         
         middle = (high+low)/2
         c_rate_h = (high-middle)/preclose
