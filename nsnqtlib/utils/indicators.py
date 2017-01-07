@@ -55,9 +55,9 @@ class StockIndicator(object):
     '''
     various kinds of stock indicator method
     '''
-    def __init__(self,startdate=(2011, 1, 1),end=(),init=False):
+    def __init__(self,startdate=(1990, 1, 1),end=(),init=False,mdb=None):
         self.isinit = init
-        self.m = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
+        self.m = mdb
         self.formatlist = ["date","volume","close","high","low","open","pre_close"]
         self.startdate = datetime.datetime( *startdate,0,0,0,0)
         self.emaslow  = 26
@@ -68,7 +68,7 @@ class StockIndicator(object):
         rst = []
         for count in range(len(self.datalst)):
             date = self.datalst[count][0]
-            filt = {"date":date}
+            filt = {"date":str(date).split(" ")[0]}
             data = {'$set': {'date':str(date).split(" ")[0]}}
             indics = self.mapindicwithfunc(self.datalst,count)
             for k,v in indics:
@@ -81,6 +81,14 @@ class StockIndicator(object):
         for data,filt in datas:
             bulk.find(filt).upsert().update(data)
         bulk.execute()
+        return 
+    
+    def updateallstocks2db(self):
+        db = self.m.client.stockdatas
+        for collection in self.looplist:
+            self.setenv(collection)
+            indics = self.generateindics()
+            self.updateindics2db(indics,db,collection)
         return 
     
     def mapindicwithfunc(self,lst,count,oldnum=300):
@@ -99,8 +107,7 @@ class StockIndicator(object):
             indicators.extend([(f_pri_c.format(i),self.getfuture(lst,count,c_index,i)) for i in futuredays])
             indicators.extend([(vol_m.format(i),self.getvols(lst,count,i)) for i in voldays])
             indicators.extend(self.getcurrentday_k(lst,count))
-            
-#             indicators.extend(self.getmacdrelates(lst,count))
+            indicators.extend(self.getmacdrelates(lst,count))
         return indicators
     
     def getvols(self,lst,count,days):
@@ -113,11 +120,15 @@ class StockIndicator(object):
         return vol/(end-start)
 
     def getfuture(self,lst,count,index,f_day):
+        '''获取未来的价格涨跌幅特征
+        '''
         try: rst = lst[count+f_day][index]
         except: rst = 0
         return rst
     
     def getyearindic(self,lst,count,oldnum=300):
+        '''获取近300个交易日的最高价，最低价特征
+        '''
         end = count+1
         if end >=oldnum:start = end-oldnum
         else: start=0
@@ -132,6 +143,8 @@ class StockIndicator(object):
         return rst
         
     def getcurrentday_k(self,lst,count):
+        '''获取当天的k柱特征值
+        '''
         preclose = lst[count][6]
         close = lst[count][2]
         high = lst[count][3]
@@ -151,18 +164,49 @@ class StockIndicator(object):
         return rst
     
     def getmacdrelates(self,lst,count):
-        keys = ["macd","ema12","ema26","diff12_26","dem9","cross_dist"]
-        return [(),]
+        d = lst[count]
+        c_close = d[2]
+        date = d[0]
+        if not self.macds:
+            n_s_ema = c_close
+            n_f_ema = c_close
+            n_diff = 0
+            n_dem = 0
+            n_macd = 0
+            n_cross_dist = 0
+        else:
+            pre_date = lst[count-1][0]
+            s_ema = self.macds[pre_date]["ema26"]
+            f_ema = self.macds[pre_date]["ema12"]
+            dem = self.macds[pre_date]["dem9"]
+            macd = self.macds[pre_date]["macd"]
+            cross_dist = self.macds[pre_date]["cross_dist"]
+            
+            n_s_ema = (s_ema*(self.emaslow-1)+ 2*c_close)/(self.emaslow+1)
+            n_f_ema = (f_ema*(self.emafast-1)+ 2*c_close)/(self.emafast+1)
+            n_diff = n_f_ema-n_s_ema
+            n_dem = (dem*(self.demday-1)+ 2*n_diff)/(self.demday+1)
+            n_macd = 2*(n_diff-n_dem)
+            if n_macd*macd >0:n_cross_dist = cross_dist + 1
+            else: n_cross_dist = 0
+        self.macds[date] = {"macd":n_macd,"ema12":n_f_ema,"ema26":n_s_ema,"diff12_26":n_diff,"dem9":n_dem,"cross_dist":n_cross_dist}
+        rst = [("macd",n_macd),("ema12",n_f_ema),("ema26",n_s_ema),("diff12_26",n_diff),("dem9",n_dem),("cross_dist",n_cross_dist)]
+        return rst
  
-
-
-###########################################################################################     
     def setenv(self,collection):
         self.count = 0
         self.collection = collection
         data = self._getdata(collection)
         self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
         self.datalst = self.rehabilitation(self.datalst)
+        self.macds = self.getmacdsfromdb(collection)
+        
+    def getmacdsfromdb(self,collection):
+        '''output:{date:[macd,ema12,ema26,diff12_26,dem9,cross_dist]}
+        '''
+        if self.isinit:return {}
+        else:
+            pass
     
     def setlooplist(self,lst=[]):
         if not lst:
@@ -215,6 +259,20 @@ class StockIndicator(object):
         for line in lst[sc:ec]:
             rst.append([line[0],line[1],*[i*weight for i in line [2:]]])
         return rst     
+    
+    
+    
+    
+    
+    
+    
+#############################################################################
+    
+    
+    
+    
+    
+    
     
     def getallindictorperday(self,indictors=[]):
         '''input: 
@@ -369,9 +427,12 @@ class StockIndicator(object):
             return base+index
     
 if __name__ == '__main__':
-    s= StockIndicator(init=True)
-    s.setenv("600455.SH")
-    s.generateindics()
+    db = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
+    s= StockIndicator(init=True,mdb=db)
+    s.setlooplist()
+    s.updateallstocks2db()
+#     s.setenv("600455.SH")
+#     s.generateindics()
     '''
     data=random.sample(range(100),100)
     print(data)
