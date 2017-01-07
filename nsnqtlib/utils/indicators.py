@@ -86,6 +86,7 @@ class StockIndicator(object):
     def updateallstocks2db(self):
         db = self.m.client.stockdatas
         for collection in self.looplist:
+            print ("udate stock:{}".format(collection))
             self.setenv(collection)
             indics = self.generateindics()
             self.updateindics2db(indics,db,collection)
@@ -245,6 +246,7 @@ class StockIndicator(object):
             c += 1
         result = []
         sc = 0
+        ec = 0
         for idx in range(len(reh)):
             weight = reh[idx][1]
             ec = reh[idx][0]
@@ -431,21 +433,6 @@ if __name__ == '__main__':
     s= StockIndicator(init=True,mdb=db)
     s.setlooplist()
     s.updateallstocks2db()
-#     s.setenv("600455.SH")
-#     s.generateindics()
-    '''
-    data=random.sample(range(100),100)
-    print(data)
-    datas=sorted(data[:10])
-    print (datas)
-    for i in data:
-        print (s.getnewindex(datas,i,10))
-    '''
-#     a = [[0,1,3],[0,1,5],[0,1,110],[0,1,98],[0,1,35],[0,1,75],[0,1,30],[0,1,16],[0,1,8],\
-#          [0,1,9],[0,1,94],[0,1,13],[0,1,18],[0,1,175],[0,1,565],[0,1,511],[0,1,543],[0,1,531],\
-#          [0,1,115],[0,1,4],[0,1,5],[0,1,23],[0,1,19],[0,1,18],[0,1,15],[0,1,43],[0,1,6]]
-#     print(s.setmacdlist(a))
-#     print(s.MACD_list(a))
     
     
     
