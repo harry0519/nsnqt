@@ -78,6 +78,7 @@ class StockIndicator(object):
         return rst
     
     def updateindics2db(self,datas,db,collection):
+        if not datas:return
         bulk = db[collection].initialize_ordered_bulk_op()
         for data,filt in datas:
             bulk.find(filt).upsert().update(data)
@@ -87,6 +88,7 @@ class StockIndicator(object):
     def updateallstocks2db(self):
         db = self.m.client.stockdatas
         for collection in self.looplist:
+            print ("udate stock:{}".format(collection))
             logging.info("udate stock:{}".format(collection))
             self.setenv(collection)
             indics = self.generateindics()
