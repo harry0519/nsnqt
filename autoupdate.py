@@ -3,7 +3,7 @@ import argparse
 import sys
 import time
 from time import clock
-import datetime
+from datetime import *
 import logging
 import urllib.request
 import re
@@ -56,10 +56,10 @@ def stock_daily_update():
     for j in range(security_list_size):
         stock_name = security_list.Data[0][j]
 
-        if stock_name[0] == '6': #=='000/001,002' #=='600/601/603,602'
+        if stock_name[0] == '3': #=='000/001,002' #=='600/601/603,602'
             #ipo_day = company_general.Data[2][j]
             #stock_data = local_wnd.get_history_data(stock_name,regular_fields, datetime.today(),datetime.today())
-            today = "2016-12-22"
+            today = "2017-1-6"#datetime.today() #"2017-1-3"
             stock_data = local_wnd.get_history_data(stock_name,regular_fields,today,today)
 
             if stock_data.ErrorCode == 0:

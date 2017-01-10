@@ -62,7 +62,7 @@ class MongoDB(BaseDB):
         filt: filter condition
         '''
         db = eval("self.client.{}".format(db))
-        bulk = db.initialize_ordered_bulk_op()
+        bulk = db[collection].initialize_ordered_bulk_op()
         if isupsert:
             bulk.find(filt).upsert().update(data)
         else:
