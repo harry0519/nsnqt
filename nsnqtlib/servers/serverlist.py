@@ -1,4 +1,4 @@
-MONGODB_PORT_DEFAULT = 27017
+MONGODB_PORT_DEFAULT = 65003
 
 
 #default local server
