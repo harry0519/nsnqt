@@ -79,40 +79,63 @@ class StrategyTest():
 
     def GeneralTest(self):
         print("Start: -----General Test-----")
+        warning = False
         #买入点涨停/涨幅超过9.8%
-        for i in self.buy_ind:
-            pass
-
         #卖出点跌停
         
-        #交易处于停盘状态
+        #交易当日无成交或者一字板
         for i in range(len(self.buy_ind)):
+            #当日无成交
             if int(self.buy_ind[i][1]) == 0:
                 print("Warning: Volumn in buy in date is 0!!")
-                print("Warning: Volumn in buy in date is 0!!")
+                warning = True
+            #一字板
+            if round(self.buy_ind[i][3],6) == round(self.buy_ind[i][4],6):
+                print("Warning: Word one board during buy!!")
+                warning = True
+            if warning == True:
+                fail_stock = self.df.iloc[[i]].values
+                print("Stock:%s, buy in date %s."%(fail_stock[0][0],fail_stock[0][1]))
+                warning = False
                 
         for i in range(len(self.sell_ind)):
+            #当日无成交
             if int(self.sell_ind[i][1]) == 0:
                 print("Warning: Volumn in sell out date is 0!!")
-        
+                warning = True
+            #一字板
+            if round(self.sell_ind[i][3],6) == round(self.sell_ind[i][4],6):
+                print("Warning: Word one board during sell !!")
+                warning = True
+            if warning == True:
+                fail_stock = self.df.iloc[[i]].values
+                print("Stock:%s, sell out date %s."%(fail_stock[0][0],fail_stock[0][2]))
+                warning = False
         return
     
     def AbnormalTest(self):
         #Just warning print，but no impact to test result
+        print("Start: -----Abnormal Check-----")
         #买入时跌停
         
         #卖出时涨停
-        print("Pass: -----Abnormal Check-----")
+        
         return
     
     def BuyPointTest(self):
+        '''
+        '''
+        print("Start: -----Buy point Test-----")
         
-        print("Pass: -----Buy point Test-----")
+        
+        
         return
     
     def SellPointTest(self):
+        '''
+        '''
+        print("Start: -----Sell point Test-----")
         
-        print("Pass: -----Sell point Test-----")
         return
     
     #策略有效/正确性测试 -- 功能测试
@@ -131,8 +154,6 @@ class StrategyTest():
         for i in self.df.values:
             if i[4] > 0:
                 sucess +=1
-        print(sucess)
-        print(len(self.df))
         sucess_ratio = sucess/len(self.df)
         return sucess_ratio
     
