@@ -68,14 +68,29 @@ class StockIndicator(object):
     def generateindics(self):
         rst = []
         for count in range(len(self.datalst)):
-            date = self.datalst[count][0]
+            currentdata = self.datalst[count]
+            date = currentdata[0]
+            tradedata = self.getperdaytradedata(currentdata)
+            
             filt = {"date":str(date).split(" ")[0]}
-            data = {'$set': {'date':str(date).split(" ")[0]}}
+            data = {'$set': tradedata}
             indics = self.mapindicwithfunc(self.datalst,count)
             for k,v in indics:
                 data['$set'][k] = v
             rst.append([data,filt])
         return rst
+    
+    def getperdaytradedata(self,data):
+        date = str(data[0]).split(" ")[0]
+        volume = data[1]
+        close = data[2]
+        high = data[3]
+        low = data[4]
+        open = data[5]
+        pre_close = data[6]
+        rst = {"date":date,"volume":volume,"close":close,"high":high,"low":low,"open":open,"pre_close":pre_close}
+        return rst
+        
     
     def updateindics2db(self,datas,db,collection):
         if not datas:return
