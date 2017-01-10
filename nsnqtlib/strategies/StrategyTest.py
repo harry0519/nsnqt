@@ -6,6 +6,9 @@ import datetime as dt
 import matplotlib.pyplot as plt
 import calendar
 
+from  nsnqtlib.db.mongodb import MongoDB
+from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
+
 #Strategy description
 class StrategyTest():
     '''
@@ -20,27 +23,78 @@ class StrategyTest():
     '''
     
     def __init__(self,principal, trade_history, \
-                 Sharpe_thres=0.5, AnnualReturn_thres=0.2, MDD_thres=0.2):
+                 Sharpe_thres=0.5, AnnualReturn_thres=0.2, MDD_thres=0.2,\
+                 SuccessRatio_thres = 0.7):
         self.principal = principal
         self.trade_history = trade_history
         self.sharpe_thres = Sharpe_thres
         self.annualreturn_thres = AnnualReturn_thres
         self.MDD_thres = MDD_thres
+        self.successratio_thres = SuccessRatio_thres
         self.final_value = 0
         self.df = trade_history[["stock","buy_date","sell_date","holddays","profit","buy_money"]]
         self.start_date = min(dt.datetime.strptime(i, "%Y-%m-%d") for i in self.df["buy_date"].values)
         self.end_date = max(dt.datetime.strptime(i, "%Y-%m-%d") for i in self.df["sell_date"].values)
         
+        self.m = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
+        self.formatlist = ["date","volume","close","high","low","open","pre_close"]
+        self.buy_ind = []
+        self.sell_ind = []
+
+        self._getAllStockData()
+        return
+        
+    def _getdata(self,trade_date,collection="000923.SZ",
+                 db="ml_security_table",\
+                 out=[],isfilt=True,filt={}):
+        if not out:out = self.formatlist
+        if isfilt and not filt: filt =  \
+            {"date":{"$gt": trade_date, "$lt": trade_date+dt.timedelta(days=1)}}
+        query = self.m.read_data(db,collection,filt=filt)
+        return self.formatquery(query,out)
+       
+    def formatquery(self,query,out):
+        '''
+        query:your source data ,should be a list with dict
+        out:the fields you want to convert into dataframe 
+        '''
+        if not out:
+            query = [i for i in query.sort("date", 1)]
+        else:
+            query = [{k:i[k] for k in out} for i in query.sort("date", 1)]
+        return pd.DataFrame(query)
+    
+    #初始化时获得交易股票对应的指标和价格
+    def _getAllStockData(self):
+        for i in self.df.values:
+            buy = self._getdata(dt.datetime.strptime(i[1], "%Y-%m-%d"),collection=i[0])
+            sell = self._getdata(dt.datetime.strptime(i[2], "%Y-%m-%d"),collection=i[0])
+            #目前按照一天同一支股票只有一个记录计算，后续如果一天多个记录，这里需要调整
+            self.buy_ind.append(buy[self.formatlist].values[0].tolist())
+            self.sell_ind.append(sell[self.formatlist].values[0].tolist())
+        #use index as list index to find correspond buy & sell data
+        self.df["index"]=self.df.index.tolist()
         return
 
+
     def GeneralTest(self):
-        #买入点涨停/开盘涨幅超过9.8%
-        
+        print("Start: -----General Test-----")
+        #买入点涨停/涨幅超过9.8%
+        for i in self.buy_ind:
+            pass
+
         #卖出点跌停
         
         #交易处于停盘状态
+        for i in range(len(self.buy_ind)):
+            if int(self.buy_ind[i][1]) == 0:
+                print("Warning: Volumn in buy in date is 0!!")
+                print("Warning: Volumn in buy in date is 0!!")
+                
+        for i in range(len(self.sell_ind)):
+            if int(self.sell_ind[i][1]) == 0:
+                print("Warning: Volumn in sell out date is 0!!")
         
-        print("Pass: -----General Test-----")
         return
     
     def AbnormalTest(self):
@@ -70,14 +124,25 @@ class StrategyTest():
         self.AbnormalTest()
 
         return
-        
+    
+    #买入成功率：买点涨的概率
+    def SuccessRatio(self):
+        sucess = 0
+        for i in self.df.values:
+            if i[4] > 0:
+                sucess +=1
+        print(sucess)
+        print(len(self.df))
+        sucess_ratio = sucess/len(self.df)
+        return sucess_ratio
+    
     # 夏普比率： 平均收益率/收益率标准差
     #Sharpe Ratio: Sharpe ratio = Excess return / Standard deviation
     #input: 
     #    erp: Portfolio expected return rate 
     #         within fixed timeperiod (e.g.yearly/monthly) 
     #    rf: risk-free/expect rate of interest  
-    def sharpe(self, erp=[], rf=0):
+    def Sharpe(self, erp=[], rf=0):
         a = np.array(erp)
         sharpe = (np.mean(a)-rf)/np.std(a,ddof=1)
         return sharpe
@@ -106,41 +171,77 @@ class StrategyTest():
         return mdd
     
     #年化收益率
-    def AnnualReturn(self, final_return, years):
-        return np.power(final_return, 1/years)
+    def AnnualReturn(self):
+        final_return = self.final_value/self.principal
+        years = (self.end_date - self.start_date).days/365.25
+        return np.power(final_return, 1/years), final_return, years
     
-        
     #日净值历史
     def daily_accumulated(self):
         '''
         '''
         datelist = [i.strftime('%Y-%m-%d') for i in pd.date_range(self.start_date, self.end_date)]
-        sell_history = {d:[] for d in datelist}
-        current_money = {d:0 for d in datelist}
-                
-        #To be added: 按每支股票每天的收盘价计算净值
-        #To be added: 检查是否存在超额支出
-        for i in self.df.values:
-            selldate = i[2]
-            sell_history[dt.datetime.strptime(selldate,"%Y-%m-%d").strftime("%Y-%m-%d")].append(i)
-    
-        current = self.principal
-        for date in datelist:
-            if len(sell_history[date]) > 0:
-                for sell_stock in sell_history[date]:
-                    current = current + sell_stock[4]*sell_stock[5]
-            current_money[date] = current
+        trade_history = {d:{'buy':[],'sell':[]} for d in datelist}
+        total_money = {d:0 for d in datelist}
+        hold_list = []
+        #用于存储交易日数据，以计算非交易日的净值
+        #{stock:[]}
+        current_price = {}
 
+        #To be added: 按每支股票每天的收盘价计算净值
+
+        #To be added: 增加以大盘指数为baseline做对比图
+
+        for i in self.df.values:
+            trade_i = i.tolist()
+            buydate = trade_i[1]
+            selldate = trade_i[2]
+            trade_history[dt.datetime.strptime(buydate,"%Y-%m-%d").strftime("%Y-%m-%d")]['buy'].append(trade_i)
+            trade_history[dt.datetime.strptime(selldate,"%Y-%m-%d").strftime("%Y-%m-%d")]['sell'].append(trade_i)
+        
+        #现金流初始化
+        current = self.principal
+        #模拟交易开始
+        for date in datelist:
+            #print(date)
+            if len(trade_history[date]) > 0:
+                for buy_stock in trade_history[date]['buy']:
+                    current -= buy_stock[5]
+                    hold_list.append(buy_stock)
+                    if round(current,6) < 0:
+                        print("Error: Buy %.20f exceed, left %.20f:"%(buy_stock[5],current))
+                        print(buy_stock)
+                for sell_stock in trade_history[date]['sell']:
+                    current += sell_stock[5]*(1+sell_stock[4])
+                    hold_list.remove(sell_stock)
+            #计算净值： 现金流+股票净值(以收盘价计算)
+            total_money[date] = current
+            for hold_stock in hold_list:
+                stock = self._getdata(dt.datetime.strptime(date, "%Y-%m-%d"),\
+                                      collection=hold_stock[0])
+                if not(stock.empty):
+                    stockl = stock[self.formatlist].values[0].tolist()
+                    current_price[hold_stock[0]] = stockl
+                
+                #print("现金流："+str(current))
+                total_money[date] +=  hold_stock[5]/self.buy_ind[hold_stock[6]][2]*\
+                                        current_price[hold_stock[0]][2]
+            '''
+                print(hold_stock[0])
+                print("买入金额"+str(hold_stock[5])+"_买入价"+str(self.buy_ind[hold_stock[6]][2])+"_当前价"+str(stockl[2]))
+            print("当前总金额："+str(total_money[date]))
+            '''
+        #最终结果，用于收益率计算      
         self.final_value = current
         
         print("Result: -----Daily value chart-----")
-        newdf = pd.DataFrame(data=[current_money[i] for i in datelist], \
+        newdf = pd.DataFrame(data=[total_money[i] for i in datelist], \
                                    index=datelist,columns=["totalmoney"])
         newdf["date"] = newdf.index
         newdf.plot(x="date", y="totalmoney", kind='area')
         plt.show()
         
-        return current_money
+        return total_money
     
     #月净值历史, 月度年化收益率
     #结算日：月末最后一天
@@ -172,7 +273,7 @@ class StrategyTest():
             monthly_money[month] = [total_money,growth,annual_yield]
             last_money = daily[date]
     
-        print("Result: -----Daily value chart-----")
+        print("Result: -----Monthly value chart-----")
         newdf = pd.DataFrame(data=[monthly_money[i] for i in monthlist], \
                                    index=monthlist,columns=["totalmoney","growth","annualyield"])
         newdf["month"] = newdf.index
@@ -195,15 +296,19 @@ class StrategyTest():
             erp.append(monthly[month][2])
         
         #checkpoints
-        final_return = self.final_value/self.principal
-        years = (self.end_date - self.start_date).days/365.25
-        ar = self.AnnualReturn(final_return, years)
+        
+        ar,final_return,years = self.AnnualReturn()
         result = "Fail" if ar < self.annualreturn_thres else "Pass"
-        print("%s: -----Sharpe Rate Test-----"%result)
+        print("%s: -----Annual Rate Test-----"%result)
         print("Result: Total return %.2f%% within %.1f years"%((final_return-1)*100, years))
         print("Result: Annual return %.2f%%"%((ar-1)*100))
         
-        sharpe = self.sharpe(erp)
+        sr = self.SuccessRatio()
+        result = "Fail" if ar < self.successratio_thres else "Pass"
+        print("%s: -----Success Rate Test-----"%result)
+        print("Result: Success rate is %.2f%%"%(sr*100))
+        
+        sharpe = self.Sharpe(erp)
         result = "Fail" if sharpe < self.sharpe_thres else "Pass"
         print("%s: -----Sharpe Rate Test-----"%result)
         print("Result: Sharpe rate is %.2f"%sharpe)
