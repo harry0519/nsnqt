@@ -66,8 +66,8 @@ class cashoptionstrategy(basestrategy):
         holding_record = []
         #print(collection)
         data = self._getdata(collection)
-        #df = pd.DataFrame(data)
-        #df.to_csv(collection+'.csv')
+        df = pd.DataFrame(data)
+        df.to_csv(collection+'.csv')
         #print(data)
         lst = [l for l in data[self.formatlist].fillna(0).values if l[1] != 0]
         count = 0
@@ -320,3 +320,6 @@ if __name__ == '__main__':
     s.looplist_historyreturn(df_stocklist)
     s.savetrading2csv()
     s.saveholding2csv()
+    report = reportforms(df)
+    report.cumulative_graph()
+    report.positiongain(100)

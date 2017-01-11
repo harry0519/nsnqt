@@ -2,8 +2,9 @@
 from nsnqtlib.strategies.strategy import basestrategy,reportforms
 import pandas as pd
 import tushare as ts
+from datetime  import datetime
 
-class ETFGridstrategy(basestrategy):
+class ETFstrategy(basestrategy):
     '''
            重写买入条件和卖出条件，
     '''
@@ -16,9 +17,14 @@ class ETFGridstrategy(basestrategy):
         self.buytimes = 0
         self.selltimes = 0
         self.bought = False
+        self.tempstatus = []
+        self.collection = ''
+        self.newformatlist = ['0','1','2','3','4']
+        self.procedurevol = ["stock", "date", "close", "startprice", "buytimes", "selltimes"]
+        #self.newformatlist = ["index","code","date", "close", "startingprice", "buytimes"]
         #self.startingprice
 
-        super(ETFGridstrategy, self).__init__(startdate, enddate)
+        super(ETFstrategy, self).__init__(startdate, enddate)
 
     # 获取需要交易股票列表
     def import_stocklist(self, stocklistname):
@@ -47,26 +53,35 @@ class ETFGridstrategy(basestrategy):
             count = count + 1
         return df
 
-    def _getdata(self,collection="600455.SH",db="ml_security_table"):
-        if db == "ml_security_table":
-            query = self.m.read_data(db,collection,filt={"date":{"$gt": self.startdate}})
-            #query.to_csv('db_'+collection + '.csv')
-            out = self.formatlist
-            return self.formatquery(query, out)
-        elif db == "tushare":
+    def _getdata(self,collection="600455.SH",db="ml_security_table",out=[],isfilt=True,filt={}):
+        self.collection = collection
+        if db == "tushare":
             #query = ts.get_hist_data(collection, start='2005-01-01', end='2016-12-23', )
             query = ts.get_hist_data(collection)
-            print(collection)
+            #print(collection)
+            query['date'] = query.index
+            query = query.sort_index(axis=0, ascending=True)
             query['pre_close'] = query['close'].shift(1)
-            query.to_csv(collection + '.csv')
-            print(collection)
-            print(query)
+            #query.to_csv(collection + '.csv')
+            #print(collection)
+            #print(query)
             #out = self.formatlist
             return query
         elif db == 'local':
             query = pd.read_csv(str(collection) + '.csv')
             #out = self.formatlist
             return query
+        else:
+            if not out: out = self.formatlist
+            if isfilt and not filt: filt = {"date": {"$gt": self.startdate}}
+            query = self.m.read_data(db, collection, filt=filt)
+            return self.formatquery(query, out)
+            '''
+            query = self.m.read_data(db,collection,filt={"date":{"$gt": self.startdate}})
+            #query.to_csv('db_'+collection + '.csv')
+            out = self.formatlist
+            return self.formatquery(query, out)
+          '''
 
     '''
     def _getdata(self,collection="600455.SH",db="ml_security_table"):
@@ -81,7 +96,7 @@ class ETFGridstrategy(basestrategy):
         trading_record = []
         holding_record = []
         #print(collection)
-        data = self._getdata(collection)
+        data = self._getdata(collection,"tushare")
         self.selltimes = 0
         self.buytimes = 0
         self.startingprice = 0
@@ -90,7 +105,7 @@ class ETFGridstrategy(basestrategy):
         lst = [l for l in data[self.formatlist].fillna(0).values if l[1] != 0]
         #lst.sort(key=lambda x: x[3])
         #l = [x[0] for x in lst]
-        #df = pd.DataFrame(l)
+        #df = pd.DataFrame(lst)
         #df.to_csv(collection+'ETFGridl.csv')
         count = 0
         for line in lst[:]:
@@ -110,6 +125,7 @@ class ETFGridstrategy(basestrategy):
 
             if isbuy:
                 #holding_record.append((line, count, collection))
+                print(collection)
                 holding_record.append(([i for i in line], count, collection))
                 print(count)
 
@@ -133,8 +149,11 @@ class ETFGridstrategy(basestrategy):
             stock_name = str(df.iat[count, 0])
             try:
                 tr,hr = self.historyreturn(stock_name, par)
+                #self.lateststatus.append(self.tempstatus)
                 self.trading_records.extend(tr)
                 self.holding_records.extend(hr)
+                #self.getprocedure(isdb=True, collection=stock_name)
+                self.saveprocedure2db(collection=stock)
             except:
                 error_list.append(stock_name)
             count = count + 1
@@ -155,41 +174,15 @@ class ETFGridstrategy(basestrategy):
         dat = lst[count][0]
         close = lst[count][2]
         pre_close = lst[count][6]
-        if count <= 200: return False
-        vol_data = [i[1] for i in lst[count - vol_day:count]]
-        #print(dat)
-        new_lst = lst.copy()
-        new_lst.sort(key=lambda x: x[3])
-        l = [x[0] for x in new_lst]
-      #  df = pd.DataFrame(l)
-       # df.to_csv(str(count)+'_ETFGrid.csv')
-        #{v: index for index, v in enumerate(lst)}
-        #print(dat)
-        lst_index = self.find_index(l, dat)
-        lst_len = len(l)
-        #print(lst_index)
-        #print(lst_len)
-        position = lst_index[0] / lst_len
-        lst[count][6] = position
+        position = self.getposition(lst,dat)
+        #position = lst_index[0] / lst_len
         #print(position)
-        #lst.sort(key=lambda x: x[1])
+        lst[count][6] = position
 
-        #maxprice = max([i[3]] for i in lst[count - price_day:count])[0]
-        #minprice = min([i[4]] for i in lst[count - price_day:count])[0]
-        #maxindex = [i for i in range(count - price_day, count) if lst[i][3] == maxprice][0]
-        #self.startingprice = par[0]
-
-        '''
-        if self.buy_condition1(vol, vol_data, vol_weight) and \
-                self.buy_condition2(close, lst[count - 1][3]) and \
-                self.buy_condition3(close, maxprice) and \
-                self.buy_condition4(close, minprice) and \
-                self.buy_condition5(count, maxindex):
-            return True
-        '''
         #and self.condition7(close, par[0])  and self.condition9(close, pre_close)
         #if self.condition10(close) and self.condition9(close, pre_close) and self.MA_condition(lst, count):
 
+        rst = False
         if self.ETFGridbuycondition2(position) and self.bought == False:
             self.startingprice = close
             print('startingprice'+str(self.startingprice)+' ')
@@ -197,26 +190,21 @@ class ETFGridstrategy(basestrategy):
             #return True
         #return False
 
-        if self.ETFGridbuycondition1(close, self.startingprice) and self.startingprice > 0:
+        if self.ETFGridbuycondition1(close, self.startingprice, self.buytimes) and self.startingprice > 0:
             #if self.bought == False:
                 #print('self.bought:false')
+            print('buy:'+str(close))
             self.buytimes = self.buytimes + 1
             self.bought = True
             #print('buy date:'+str(dat)+'  buy price:'+str(close)+' startingprice'+str(self.startingprice))
             #print('buy times:'+str(self.buytimes))
             #print('position:'+str(position))
-            return True
-        return False
-
-        '''
-        if self.ETFGridbuycondition1(close, self.startingprice) and self.ETFGridbuycondition2(position):
-            #print(dat)
-            #self.buyprice = pre_close
-            self.buytimes = self.buytimes + 1
-            #print(close)
-            return True
-        return False
-       '''
+            rst = True
+            #return True
+        self.setprocedure(lst, count)
+        #print(self.temstatus)
+        self.lateststatus.append(self.tempstatus)
+        return rst
 
     def sell(self, lst, count, buyrecord):
         currentday_high = lst[count][3]
@@ -234,49 +222,9 @@ class ETFGridstrategy(basestrategy):
         buy_date = buyrecord[0][0]
         collection = buyrecord[2]
 
-        '''
-        if self.stopgain_condition(buy_price, currentday_high, gain_grads):
-            self.bought = False
-            gain_grads = (currentday_high - buy_price) / buy_price
+        if self.holdingtime_condition(hold_days, dayout) or self.ETFGridsellcondition1(high, self.startingprice, self.selltimes):
             #sell_date = sell_date.strftime('%Y-%m-%d')
             #buy_date = buy_date.strftime('%Y-%m-%d')
-            #sell_date = changedateformat(sell_date)
-            return True, [collection, buy_date, sell_date, hold_days, gain_grads, '']
-        elif self.stoploss_condition(buy_price, currentday_low, loss_grads):
-            #sell_date = sell_date.strftime('%Y-%m-%d')
-            #buy_date = buy_date.strftime('%Y-%m-%d')
-            return True, [collection, buy_date, sell_date, hold_days, (close - buy_price) / buy_price, '']
-        elif self.holdingtime_condition(hold_days, dayout):
-            #sell_date = sell_date.strftime('%Y-%m-%d')
-            #buy_date = buy_date.strftime('%Y-%m-%d')
-            return True, [collection, buy_date, sell_date, hold_days, (close - buy_price) / buy_price, '']
-        el
-        if self.Sellcondition3(close):
-            #sell_date = sell_date.strftime('%Y-%m-%d')
-            #buy_date = buy_date.strftime('%Y-%m-%d')
-            return True, [collection, buy_date, sell_date, hold_days, (close - buy_price) / buy_price, '']
-        return False, None
-       '''
-        '''
-        if self.ETFGridsellcondition1(high, self.startingprice):
-            #sell_date = sell_date.strftime('%Y-%m-%d')
-            #buy_date = buy_date.strftime('%Y-%m-%d')
-            self.selltimes = self.selltimes + 1
-            #self.buytimes = self.buytimes - 1
-            sell_date = sell_date.strftime('%Y-%m-%d')
-            buy_date = buy_date.strftime('%Y-%m-%d')
-            print('sell date:'+str(sell_date)+'  sell price:'+str(close))
-            print('sell times:'+str(self.selltimes))
-            if self.selltimes > 5:
-                self.selltimes = 0
-                self.bought = False
-            return True, [collection, buy_date, sell_date, hold_days, (close - buy_price) / buy_price, '']
-        return False, None
-        '''
-
-        if self.holdingtime_condition(hold_days, dayout) or self.ETFGridsellcondition1(high, self.startingprice):
-            sell_date = sell_date.strftime('%Y-%m-%d')
-            buy_date = buy_date.strftime('%Y-%m-%d')
             self.selltimes = self.selltimes + 1
             self.buytimes = self.buytimes - 1
             print('sell date:'+str(sell_date)+'  sell price:'+str(close))
@@ -291,12 +239,89 @@ class ETFGridstrategy(basestrategy):
                 #self.selltimes = 0
             return True, [collection, buy_date, sell_date, hold_days, (close - buy_price) / buy_price, '']
         return False, None
+
+    def getposition(self,lst, dat):
+
+        count = len(lst)
+        if count <= 200: return False
+        new_lst = lst.copy()
+        new_lst.sort(key=lambda x: x[3])
+        l = [x[0] for x in new_lst]
+        lst_index = self.find_index(l, dat)
+        lst_len = len(l)
+        position = lst_index[0] / lst_len
+        #lst[count][6] = position
+        return position
+
+    def getprocedure(self, filename="procedure_records.csv", isdb=False, collection="processstatus", db="etfgrid"):
+        '''"stock","date","data","s_ema","f_ema","diff","dem","macd","status"
         '''
-                elif self.holdingtime_condition(hold_days, dayout):
-                    sell_date = sell_date.strftime('%Y-%m-%d')
-                    buy_date = buy_date.strftime('%Y-%m-%d')
-                    return True, [collection, buy_date, sell_date, hold_days, (close - buy_price) / buy_price, '']
-       '''
+        buy = []
+        sell = []
+        newlist = []
+        newdatalist = []
+        out = ["stock", "date", "close", "startprice", "buytimes", "selltimes"]
+        if isdb:
+            #df = self._getdata(collection, db, out=out, isfilt=False)[out]
+            df = self._getdata(collection, db, out=out, isfilt=False)
+            print(df)
+        else:
+            #df = pd.read_csv(filename)[out]
+            df = pd.read_csv(filename)
+        print(df)
+        stock = str(df['stock'].iloc[0])
+        print(stock)
+        new_df = ts.get_realtime_quotes(stock)
+        print(new_df)
+        price = float(new_df['ask'].iloc[0])
+        high = float(new_df['high'].iloc[0])
+        #price = 0.89
+        df_len = len(df.index) - 1
+        startprice = df['startprice'].iloc[df_len]
+        buynumber = df['buytimes'].iloc[df_len]
+        sellnumber = df['selltimes'].iloc[df_len]
+        if buynumber == 0:
+            dat = datetime.today().strftime('%Y-%m-%d')
+            lastdata = [dat,0,0,price]
+            newdatalist = [l for l in df[['date', 'startprice', "buytimes", 'close']].values]
+            newdatalist.append(lastdata)
+            position = self.getposition(newdatalist,dat)
+            print(position)
+            if position < 0.05:
+                buy.append(collection)
+        elif self.ETFGridbuycondition1(price, startprice, buynumber) and buynumber > 0:
+            #print(1.2*0.75)
+            buy.append(collection)
+        elif self.ETFGridsellcondition1(high, startprice, sellnumber):
+            sell.append(collection)
+        #print(buy)
+        return buy, sell
+
+    def setprocedure(self, lst, count):
+        dat = lst[count][0]
+        close = lst[count][2]
+        self.tempstatus = [self.collection, dat, close, self.startingprice, self.buytimes,self.selltimes]
+
+    def saveprocedure(self,filename="procedure_records.csv"):
+        df = pd.DataFrame(self.lateststatus,columns=self.procedurevol)
+        #df = pd.DataFrame(self.lateststatus)
+        df.to_csv(filename)
+        return
+
+    def saveprocedure2db(self, db="etfgrid", collection="processstatus"):
+        self.lateststatus
+        db = eval("self.m.client.{}".format(db))
+        bulk = db[collection].initialize_ordered_bulk_op()
+        for line in self.lateststatus:
+            bulk.find({'date': line[1]}).upsert().update( \
+                {'$set': {'stock': line[0], \
+                          'close': line[2], \
+                          'startprice': line[3], \
+                          'buytimes': line[4], \
+                          'selltimes': line[5], \
+                          }})
+        bulk.execute()
+        return
 
     def stopgain_condition(self, buy_price, current_price, grads=0.1):
         if (current_price - buy_price) / buy_price >= grads:
@@ -354,8 +379,8 @@ class ETFGridstrategy(basestrategy):
             return True
         return False
 
-    def ETFGridbuycondition1(self, close, startingprice):
-        if close <= startingprice *(1- self.buytimes * 0.05) and self.buytimes < 6:
+    def ETFGridbuycondition1(self, close, startingprice, buytime):
+        if close <= startingprice *(1- buytime * 0.05) and buytime < 6:
             #print(self.buytimes)
             #print(str(startingprice *(1- self.buytimes * 0.05)))
             return True
@@ -366,8 +391,8 @@ class ETFGridstrategy(basestrategy):
             return True
         return False
 
-    def ETFGridsellcondition1(self, close, startingprice):
-        if close > startingprice * (1.1 + self.selltimes*0.05) and self.bought == True:
+    def ETFGridsellcondition1(self, close, startingprice, selltime):
+        if close > startingprice * (1.1 + selltime*0.05) and self.bought == True:
             #print('sell times: '+str(self.selltimes))
             return True
         return False
@@ -440,16 +465,39 @@ class ETFGridstrategy(basestrategy):
         return [i for i, a in enumerate(arr) if a == item]
 
 if __name__ == '__main__':
-    '''
-    s = ETFGridstrategy()
-    df_stocklist = s.import_stocklist("ETFGrid")
+
+    s = ETFstrategy()
+
+    df_stocklist = s.import_stocklist("ETFGrid_new")
     print(df_stocklist)
+    stock = df_stocklist.iat[0,0]
+    print("test:"+stock)
+    #df.iat[count, 0]
     #s.setlooplist()
     s.looplist_historyreturn(df_stocklist)
     s.savetrading2csv()
     s.saveholding2csv()
+    #print(s.tempstatus)
+    #print(s.lateststatus)
+    #df = pd.DataFrame(s.lateststatus)
+    #df.to_csv('lateststatus.csv')
+    #s.saveprocedure()
+    #s.saveprocedure2db(collection=stock)
+
+
+    #new_df = ts.get_realtime_quotes('159920')
+    #print(new_df)
+    #new_df = ts.get_realtime_quotes('159920')
+    #print(new_df['ask'].iloc[0])
+    #print(df.ix[0, 'ask'])
+    #print(new_df[['code','name','price','bid','ask','volume','amount','time']])
     '''
-    df = pd.read_csv('trading_records.csv')
-    report = reportforms(df)
-    report.cumulative_graph()
-    report.positiongain(5)
+    ls = s.getcurrentdata()
+    new_df = pd.DataFrame(ls)
+    new_df.to_csv('new_df.csv')
+    print(ls)
+    '''
+    #df = pd.read_csv('trading_records.csv')
+    #report = reportforms(df)
+    #report.cumulative_graph()
+    #report.positiongain(100)
