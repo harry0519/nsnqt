@@ -5,11 +5,12 @@ import pandas as pd
 import datetime as dt
 import matplotlib.pyplot as plt
 import calendar
+import random
 
 from  nsnqtlib.db.mongodb import MongoDB
 from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
 
-#Strategy description
+#基于交易记录进行策略测试
 class StrategyTest():
     '''
     input: 
@@ -24,7 +25,8 @@ class StrategyTest():
     
     def __init__(self,principal, trade_history, \
                  Sharpe_thres=0.5, AnnualReturn_thres=0.2, MDD_thres=0.2,\
-                 SuccessRatio_thres = 0.7):
+                 SuccessRatio_thres = 0.7,
+                 Accurate_daily_price = True):
         self.principal = principal
         self.trade_history = trade_history
         self.sharpe_thres = Sharpe_thres
@@ -32,16 +34,17 @@ class StrategyTest():
         self.MDD_thres = MDD_thres
         self.successratio_thres = SuccessRatio_thres
         self.final_value = 0
+        self.accurate_daily_price = Accurate_daily_price
         self.df = trade_history[["stock","buy_date","sell_date","holddays","profit","buy_money"]]
         self.start_date = min(dt.datetime.strptime(i, "%Y-%m-%d") for i in self.df["buy_date"].values)
         self.end_date = max(dt.datetime.strptime(i, "%Y-%m-%d") for i in self.df["sell_date"].values)
         
-        self.m = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
-        self.formatlist = ["date","volume","close","high","low","open","pre_close"]
-        self.buy_ind = []
-        self.sell_ind = []
-
-        self._getAllStockData()
+        if Accurate_daily_price:
+            self.m = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
+            self.formatlist = ["date","volume","close","high","low","open","pre_close"]
+            self.buy_ind = []
+            self.sell_ind = []
+            self._getTradeStockData()
         return
         
     def _getdata(self,trade_date,collection="000923.SZ",
@@ -65,7 +68,7 @@ class StrategyTest():
         return pd.DataFrame(query)
     
     #初始化时获得交易股票对应的指标和价格
-    def _getAllStockData(self):
+    def _getTradeStockData(self):
         for i in self.df.values:
             buy = self._getdata(dt.datetime.strptime(i[1], "%Y-%m-%d"),collection=i[0])
             sell = self._getdata(dt.datetime.strptime(i[2], "%Y-%m-%d"),collection=i[0])
@@ -263,7 +266,39 @@ class StrategyTest():
         plt.show()
         
         return total_money
+
+    #没有考虑日价格波动数据的方式用这个函数来测量
+    #优势：速度快，不用读数据库
+    #可能会有些波动性误差
+    def daily_accumulated_fuzzy(self):
+        '''
+        '''
+        datelist = [i.strftime('%Y-%m-%d') for i in pd.date_range(self.start_date, self.end_date)]
+        sell_history = {d:[] for d in datelist}
+        current_money = {d:0 for d in datelist}
     
+        for i in self.df.values:
+            selldate = i[2]
+            sell_history[dt.datetime.strptime(selldate,"%Y-%m-%d").strftime("%Y-%m-%d")].append(i)
+
+        current = self.principal
+        for date in datelist:
+            if len(sell_history[date]) > 0:
+                for sell_stock in sell_history[date]:
+                    current = current + sell_stock[4]*sell_stock[5]
+            current_money[date] = current
+    
+        #最终结果，用于收益率计算      
+        self.final_value = current
+        
+        print("Result: -----Daily value chart-----")
+        newdf = pd.DataFrame(data=[current_money[i] for i in datelist], \
+                                   index=datelist,columns=["totalmoney"])
+        newdf["date"] = newdf.index
+        newdf.plot(x="date", y="totalmoney", kind='area')
+        plt.show()
+        return current_money
+        
     #月净值历史, 月度年化收益率
     #结算日：月末最后一天
     def monthly_accumulated(self):
@@ -272,7 +307,10 @@ class StrategyTest():
             dict:{date:[total_money,growth_ratio,annual_yield]}   !!no order for dict
                   Monthly accumulated history during whole trade
         '''
-        daily = self.daily_accumulated()
+        if self.accurate_daily_price:
+            daily = self.daily_accumulated()
+        else:
+            daily = self.daily_accumulated_fuzzy()
         date_list = sorted(daily.keys())
         start_date = date_list[0]
         end_date = date_list[-1]
@@ -302,7 +340,10 @@ class StrategyTest():
         plt.show()
 
         return monthly_money
-
+    
+    #交易频度统计
+    def TotalDeals(self):
+        return len(self.df)
         
     #策略回测：收益率+指标报告
     def BackTest(self): 
@@ -319,9 +360,14 @@ class StrategyTest():
         #checkpoints
         
         ar,final_return,years = self.AnnualReturn()
-        result = "Fail" if ar < self.annualreturn_thres else "Pass"
+        result = "Fail" if (ar-1) < self.annualreturn_thres else "Pass"
+        total_deals = self.TotalDeals()
+        montly_deals = total_deals/years/12
+        expect_return = (final_return-1)/total_deals
         print("%s: -----Annual Rate Test-----"%result)
         print("Result: Total return %.2f%% within %.1f years"%((final_return-1)*100, years))
+        print("Result: Total %d deals, monthly average %.2f deals"%(total_deals, montly_deals))
+        print("Result: Mathematics expect %.2f%% for each deal"%(expect_return*100))
         print("Result: Annual return %.2f%%"%((ar-1)*100))
         
         sr = self.SuccessRatio()
@@ -345,6 +391,7 @@ class StrategyTest():
         print("Pass: -----Extreme Case Test-----")
         return
     
+    #sharpe大于1，alpha为正，beta小于0.8的策略比较好
     #全量测试：功能测试+回测+极端测试
     def StrategyTest(self):
         self.ValidityTest()
@@ -352,11 +399,77 @@ class StrategyTest():
         self.ExtremeCaseTest()
         return
 
+#基于可以交易点列表模拟产生交易数据
+class TradeSimulate():
+    '''
+    input: 
+        tradable_list: stock buy-in and sell-out history. format should be
+            "index(title is none)" "stock","buy_date","sell_date","holddays","profit"
+            date format: %Y-%m-%d
+        principal: initial invest money
+    output:
+        dict:{date:total_money}   !!no order for dict
+              Daily accumulated history during whole trade
+    '''
+    
+    def __init__(self, tradable_list, principal=100, piece=100):
+        self.piece = piece
+        self.principal = principal
+        self.df = tradable_list[["stock","buy_date","sell_date","holddays","profit"]]
+        self.start = sorted(self.df["buy_date"].values)[0]
+        self.end = sorted(self.df["sell_date"].values)[-1]
+        return
+        
+    def TradeSimulate(self):
+        '''
+        '''
+        totalmoney = self.principal
+        leftmoney = self.principal
+        holds = []
+        datelist = [i.strftime('%Y-%m-%d') for i in pd.date_range(self.start, self.end)]
+        result = {d:[] for d in datelist}
+        gains = {d:0 for d in datelist}
+        trade_history = []
+
+        for i in self.df.values:
+            buydate = i[1]
+            result[buydate].append(i)
+        
+        for date in datelist:
+            currentholdnum = len(holds)
+            current_day_could_buy_num = len(result[date])
+            if current_day_could_buy_num >=1 and currentholdnum < self.piece:
+                buymoney = leftmoney/(self.piece-currentholdnum)
+                if current_day_could_buy_num + currentholdnum <= self.piece:
+                    leftmoney = leftmoney - buymoney*current_day_could_buy_num
+                    holds.extend([([j for j in i],buymoney) for i in result[date]])
+                else:
+                    leftmoney = 0
+                    holds.extend([([j for j in i],buymoney) for i in random.sample(result[date],self.piece-currentholdnum)])
+            for d in holds[:]:
+                sell_date = d[0][2]
+                if sell_date <= date: 
+                    holds.remove(d)
+                    leftmoney += d[1]*(d[0][4]+1-0.0015)  
+                    totalmoney += d[1]*(d[0][4]-0.0015)
+                    stock_i=d[0]
+                    stock_i.append(d[1])
+                    trade_history.append(stock_i)
+            gains[date] = totalmoney
+        
+        resultdf = pd.DataFrame(trade_history,columns=["stock","buy_date","sell_date","holddays","profit","buy_money"])
+        print("Report: -----Trade simulation-----")
+        
+        return resultdf
+
 if __name__ == '__main__':
     #Buy points test
     #Sell points test
     #Regression test
     
-    df = pd.read_csv('positiongain.csv')
-    a = StrategyTest(100,df)
-    a.StrategyTest()
+    #df = pd.read_csv('positiongain.csv')
+    df = pd.read_csv('ETF.csv')
+    s = TradeSimulate(df, piece=2)
+    newdf = s.TradeSimulate()
+    a = StrategyTest(100, newdf, Accurate_daily_price = False)
+    a.BackTest()
