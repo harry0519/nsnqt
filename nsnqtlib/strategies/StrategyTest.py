@@ -6,6 +6,7 @@ import datetime as dt
 import matplotlib.pyplot as plt
 import calendar
 import random
+import tushare as ts
 
 from  nsnqtlib.db.mongodb import MongoDB
 from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
@@ -26,7 +27,7 @@ class StrategyTest():
     def __init__(self,principal, trade_history, \
                  Sharpe_thres=0.5, AnnualReturn_thres=0.2, MDD_thres=0.2,\
                  SuccessRatio_thres = 0.7,
-                 Accurate_daily_price = True):
+                 Accurate_metrics = True):
         self.principal = principal
         self.trade_history = trade_history
         self.sharpe_thres = Sharpe_thres
@@ -34,12 +35,12 @@ class StrategyTest():
         self.MDD_thres = MDD_thres
         self.successratio_thres = SuccessRatio_thres
         self.final_value = 0
-        self.accurate_daily_price = Accurate_daily_price
+        self.accurate_metrics = Accurate_metrics
         self.df = trade_history[["stock","buy_date","sell_date","holddays","profit","buy_money"]]
         self.start_date = min(dt.datetime.strptime(i, "%Y-%m-%d") for i in self.df["buy_date"].values)
         self.end_date = max(dt.datetime.strptime(i, "%Y-%m-%d") for i in self.df["sell_date"].values)
         
-        if Accurate_daily_price:
+        if self.accurate_metrics:
             self.m = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
             self.formatlist = ["date","volume","close","high","low","open","pre_close"]
             self.buy_ind = []
@@ -307,7 +308,7 @@ class StrategyTest():
             dict:{date:[total_money,growth_ratio,annual_yield]}   !!no order for dict
                   Monthly accumulated history during whole trade
         '''
-        if self.accurate_daily_price:
+        if self.accurate_metrics:
             daily = self.daily_accumulated()
         else:
             daily = self.daily_accumulated_fuzzy()
@@ -366,9 +367,9 @@ class StrategyTest():
         expect_return = (final_return-1)/total_deals
         print("%s: -----Annual Rate Test-----"%result)
         print("Result: Total return %.2f%% within %.1f years"%((final_return-1)*100, years))
+        print("Result: Annual return %.2f%%"%((ar-1)*100))
         print("Result: Total %d deals, monthly average %.2f deals"%(total_deals, montly_deals))
         print("Result: Mathematics expect %.2f%% for each deal"%(expect_return*100))
-        print("Result: Annual return %.2f%%"%((ar-1)*100))
         
         sr = self.SuccessRatio()
         result = "Fail" if ar < self.successratio_thres else "Pass"
@@ -394,7 +395,8 @@ class StrategyTest():
     #sharpe大于1，alpha为正，beta小于0.8的策略比较好
     #全量测试：功能测试+回测+极端测试
     def StrategyTest(self):
-        self.ValidityTest()
+        if self.accurate_metrics:
+            self.ValidityTest()
         self.BackTest()
         self.ExtremeCaseTest()
         return
@@ -459,6 +461,8 @@ class TradeSimulate():
         
         resultdf = pd.DataFrame(trade_history,columns=["stock","buy_date","sell_date","holddays","profit","buy_money"])
         print("Report: -----Trade simulation-----")
+        print("Result: %d piece simulat"%self.piece)
+        print("Result: %d deals, cover %.2f%% of tradable points"%(len(resultdf),len(resultdf)/len(self.df)*100))
         
         return resultdf
 
@@ -468,8 +472,12 @@ if __name__ == '__main__':
     #Regression test
     
     #df = pd.read_csv('positiongain.csv')
-    df = pd.read_csv('ETF.csv')
-    s = TradeSimulate(df, piece=2)
+    #df = pd.read_csv('ETF.csv')
+    df = pd.read_csv('MACD.csv')
+    s = TradeSimulate(df, piece=60)
     newdf = s.TradeSimulate()
-    a = StrategyTest(100, newdf, Accurate_daily_price = False)
+    
+    a = StrategyTest(100, newdf, Accurate_metrics = False)
     a.BackTest()
+    
+    print(ts.get_realtime_quotes('000300'))
