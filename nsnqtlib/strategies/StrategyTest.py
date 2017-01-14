@@ -27,7 +27,7 @@ class StrategyTest():
     def __init__(self,principal, trade_history, \
                  Sharpe_thres=0.5, AnnualReturn_thres=0.2, MDD_thres=0.2,\
                  SuccessRatio_thres = 0.7,
-                 Accurate_metrics = True):
+                 Accurate_metrics = True, Fixed_fee=0.002):
         self.principal = principal
         self.trade_history = trade_history
         self.sharpe_thres = Sharpe_thres
@@ -35,7 +35,9 @@ class StrategyTest():
         self.MDD_thres = MDD_thres
         self.successratio_thres = SuccessRatio_thres
         self.final_value = 0
+        self.total_commission = 0
         self.accurate_metrics = Accurate_metrics
+        self.fixed_fee = Fixed_fee
         self.df = trade_history[["stock","buy_date","sell_date","holddays","profit","buy_money"]]
         self.start_date = min(dt.datetime.strptime(i, "%Y-%m-%d") for i in self.df["buy_date"].values)
         self.end_date = max(dt.datetime.strptime(i, "%Y-%m-%d") for i in self.df["sell_date"].values)
@@ -171,6 +173,14 @@ class StrategyTest():
         a = np.array(erp)
         sharpe = (np.mean(a)-rf)/np.std(a,ddof=1)
         return sharpe
+        
+    #单次最大收益
+    def MaxSingleEarn(self):
+        return self.df["profit"].max()
+    
+    #单次最大亏损
+    def MaxSingleLoss(self):
+        return self.df["profit"].min()
     
     #最大回撤率
     #Max draw down ratio
@@ -237,7 +247,8 @@ class StrategyTest():
                         print("Error: Buy %.20f exceed, left %.20f:"%(buy_stock[5],current))
                         print(buy_stock)
                 for sell_stock in trade_history[date]['sell']:
-                    current += sell_stock[5]*(1+sell_stock[4])
+                    current += sell_stock[5]*(1+sell_stock[4])*(1-self.fixed_fee)
+                    self.total_commission += sell_stock[5]*(1+sell_stock[4])*self.fixed_fee
                     hold_list.remove(sell_stock)
             #计算净值： 现金流+股票净值(以收盘价计算)
             total_money[date] = current
@@ -259,7 +270,7 @@ class StrategyTest():
         #最终结果，用于收益率计算      
         self.final_value = current
         
-        print("Result: -----Daily value chart-----")
+        print("Chart: -----Daily value chart-----")
         newdf = pd.DataFrame(data=[total_money[i] for i in datelist], \
                                    index=datelist,columns=["totalmoney"])
         newdf["date"] = newdf.index
@@ -286,13 +297,15 @@ class StrategyTest():
         for date in datelist:
             if len(sell_history[date]) > 0:
                 for sell_stock in sell_history[date]:
-                    current = current + sell_stock[4]*sell_stock[5]
+                    commission = sell_stock[5]*(1+sell_stock[4])*self.fixed_fee
+                    current = current + sell_stock[4]*sell_stock[5] - commission
+                    self.total_commission += commission
             current_money[date] = current
     
         #最终结果，用于收益率计算      
         self.final_value = current
         
-        print("Result: -----Daily value chart-----")
+        print("Chart: -----Daily value chart-----")
         newdf = pd.DataFrame(data=[current_money[i] for i in datelist], \
                                    index=datelist,columns=["totalmoney"])
         newdf["date"] = newdf.index
@@ -333,7 +346,7 @@ class StrategyTest():
             monthly_money[month] = [total_money,growth,annual_yield]
             last_money = daily[date]
     
-        print("Result: -----Monthly value chart-----")
+        print("Chart: -----Monthly value chart-----")
         newdf = pd.DataFrame(data=[monthly_money[i] for i in monthlist], \
                                    index=monthlist,columns=["totalmoney","growth","annualyield"])
         newdf["month"] = newdf.index
@@ -346,13 +359,38 @@ class StrategyTest():
     def TotalDeals(self):
         return len(self.df)
         
+    #单笔交易收益率
+    def ProfitHistogram(self,bins=10):
+        print("Chart: -----Profit per deal chart-----")
+        plt.hist(self.df["profit"].values, bins=bins, alpha=0.5)   
+        plt.xlabel('value', fontsize=16)  
+        plt.ylabel('count', fontsize=16)  
+        plt.title('Profit for each deal' , fontsize=16)  
+        plt.tick_params(axis='both', which='major', labelsize=12)  
+        plt.show()
+        print("Chart: -----Daily profit per deal chart-----")
+        daily=[]
+        for i in self.df.values:
+            daily_profit = i[4]/i[3]
+            daily.append(daily_profit)
+        df = pd.DataFrame(daily, columns=["daily"])
+        plt.hist(df["daily"].values, bins=bins, alpha=0.5)   
+        plt.xlabel('value', fontsize=16)  
+        plt.ylabel('count', fontsize=16)  
+        plt.title('Daily profit for each deal' , fontsize=16)  
+        plt.tick_params(axis='both', which='major', labelsize=12)  
+        plt.show()
+        
+        
     #策略回测：收益率+指标报告
     def BackTest(self): 
         accumulated = []
         erp = []
+        #收益率分布图
+        self.ProfitHistogram()
+        #收益曲线
         monthly = self.monthly_accumulated()
         month_list = sorted(monthly.keys())
-        
         #统计结果
         for month in month_list:
             accumulated.append(monthly[month][0])
@@ -365,26 +403,33 @@ class StrategyTest():
         total_deals = self.TotalDeals()
         montly_deals = total_deals/years/12
         expect_return = (final_return-1)/total_deals
-        print("%s: -----Annual Rate Test-----"%result)
-        print("Result: Total return %.2f%% within %.1f years"%((final_return-1)*100, years))
-        print("Result: Annual return %.2f%%"%((ar-1)*100))
-        print("Result: Total %d deals, monthly average %.2f deals"%(total_deals, montly_deals))
-        print("Result: Mathematics expect %.2f%% for each deal"%(expect_return*100))
+        print("%s: -----Profit Test-----"%result)
+        print("[Result]: Initial %.2f --> %.2f within %.1f years."\
+              %(self.principal,self.final_value, years))
+        print("[Result]: Total commission %.2f."\
+              %(self.total_commission))
+        print("[Result]: Total return %.2f%%. Annual return %.2f%%"\
+              %((final_return-1)*100, (ar-1)*100))
+        print("[Result]: Total %d deals, monthly average %.2f deals"%(total_deals, montly_deals))
+        print("[Result]: Average profit %.2f%% for each deal"%(expect_return*100))
         
+        
+        print("Start: -----Suceess deal Test-----")
+        print("[Result]: Max single earn %.2f%%. Max single loss %.2f%%"\
+              %(self.MaxSingleEarn()*100,self.MaxSingleLoss()*100))
         sr = self.SuccessRatio()
         result = "Fail" if ar < self.successratio_thres else "Pass"
-        print("%s: -----Success Rate Test-----"%result)
-        print("Result: Success rate is %.2f%%"%(sr*100))
+        print("[Result]: Success rate is %.2f%%"%(sr*100))
         
         sharpe = self.Sharpe(erp)
         result = "Fail" if sharpe < self.sharpe_thres else "Pass"
         print("%s: -----Sharpe Rate Test-----"%result)
-        print("Result: Sharpe rate is %.2f"%sharpe)
+        print("[Result]: Sharpe rate is %.2f"%sharpe)
         
         MDD = self.MDD(accumulated)
         result = "Fail" if MDD > self.MDD_thres else "Pass"
         print("%s: -----Max Draw Down Test-----"%result)
-        print("Result: Max Draw Down is %.2f%%"%(MDD*100))
+        print("[Result]: Max Draw Down is %.2f%%"%(MDD*100))
         return
     
 
@@ -461,8 +506,8 @@ class TradeSimulate():
         
         resultdf = pd.DataFrame(trade_history,columns=["stock","buy_date","sell_date","holddays","profit","buy_money"])
         print("Report: -----Trade simulation-----")
-        print("Result: %d piece simulat"%self.piece)
-        print("Result: %d deals, cover %.2f%% of tradable points"%(len(resultdf),len(resultdf)/len(self.df)*100))
+        print("[Result]: %d piece simulat"%self.piece)
+        print("[Result]: %d deals, cover %.2f%% of tradable points"%(len(resultdf),len(resultdf)/len(self.df)*100))
         
         return resultdf
 
@@ -472,12 +517,12 @@ if __name__ == '__main__':
     #Regression test
     
     #df = pd.read_csv('positiongain.csv')
-    #df = pd.read_csv('ETF.csv')
-    df = pd.read_csv('MACD.csv')
-    s = TradeSimulate(df, piece=60)
+    df = pd.read_csv('ETF.csv')
+    #df = pd.read_csv('MACD.csv')
+    s = TradeSimulate(df, piece=2)
     newdf = s.TradeSimulate()
     
     a = StrategyTest(100, newdf, Accurate_metrics = False)
     a.BackTest()
     
-    print(ts.get_realtime_quotes('000300'))
+    #print(ts.get_hist_data('hs300',start='2011-01-06',end='2014-01-16'))
