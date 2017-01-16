@@ -247,7 +247,7 @@ class StockIndicator(object):
         data = self._getdata(collection,out=self.formatlist,filt=filt,is_aggregate=True)
         self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
         
-        if self.checkexright(self.p_data,self.datalst):
+        if not self.isinit and self.checkexright(self.p_data,self.datalst):
             filt = [{"$sort":{"date":-1}},{"$limit":3000}]
             data = self._getdata(collection,out=self.formatlist,filt=filt,is_aggregate=True)
             self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
