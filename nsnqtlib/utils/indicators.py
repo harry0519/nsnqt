@@ -56,29 +56,47 @@ class StockIndicator(object):
     '''
     various kinds of stock indicator method
     '''
-    def __init__(self,startdate=(1990, 1, 1),end=(),init=False,mdb=None):
+    def __init__(self,startdate=(1990, 1, 1),end=(),init=False,mdb=None,yearperid=300,perid=20):
         self.isinit = init
+        self.yearperid = yearperid
+        self.perid = perid
         self.m = mdb
         self.formatlist = ["date","volume","close","high","low","open","pre_close"]
-        self.startdate = datetime.datetime( *startdate,0,0,0,0)
+#         self.startdate = datetime.datetime( *startdate,0,0,0,0)
+        self.startdate = datetime.datetime.now() + datetime.timedelta(days = -perid)
         self.emaslow  = 26
         self.emafast = 12
         self.demday = 9
     
     def generateindics(self):
         rst = []
+        isstart = self.precheck()
         for count in range(len(self.datalst)):
             currentdata = self.datalst[count]
-            date = currentdata[0]
-            tradedata = self.getperdaytradedata(currentdata)
+            date = str(currentdata[0]).split(" ")[0]
+            if not isstart:
+                isstart = self.checkstartdate(date)
+                if not isstart: continue
             
-            filt = {"date":str(date).split(" ")[0]}
+            tradedata = self.getperdaytradedata(currentdata)
+            filt = {"date":date}
             data = {'$set': tradedata}
+            print (date)
             indics = self.mapindicwithfunc(self.datalst,count)
             for k,v in indics:
                 data['$set'][k] = v
             rst.append([data,filt])
         return rst
+    
+    def checkstartdate(self,date,):
+        if date > self.duplicatedate[1]:
+            return True
+        return False
+    
+    def precheck(self):
+        if self.isinit:return True
+        if len(self.duplicatedate) == 0:return True
+        return False
     
     def getperdaytradedata(self,data):
         date = str(data[0]).split(" ")[0]
@@ -120,13 +138,12 @@ class StockIndicator(object):
         h_index = 3
         f_pri_c ="f_pri_c{}"
         c_index = 2
-        if self.isinit or count >=oldnum:
-            indicators.extend(self.getyearindic(lst,count,oldnum))
-            indicators.extend([(f_pri_h.format(i),self.getfuture(lst,count,h_index,i)) for i in futuredays])
-            indicators.extend([(f_pri_c.format(i),self.getfuture(lst,count,c_index,i)) for i in futuredays])
-            indicators.extend([(vol_m.format(i),self.getvols(lst,count,i)) for i in voldays])
-            indicators.extend(self.getcurrentday_k(lst,count))
-            indicators.extend(self.getmacdrelates(lst,count))
+        indicators.extend(self.getyearindic(lst,count,oldnum))
+        indicators.extend([(f_pri_h.format(i),self.getfuture(lst,count,h_index,i)) for i in futuredays])
+        indicators.extend([(f_pri_c.format(i),self.getfuture(lst,count,c_index,i)) for i in futuredays])
+        indicators.extend([(vol_m.format(i),self.getvols(lst,count,i)) for i in voldays])
+        indicators.extend(self.getcurrentday_k(lst,count))
+        indicators.extend(self.getmacdrelates(lst,count))
         return indicators
     
     def getvols(self,lst,count,days):
@@ -186,7 +203,7 @@ class StockIndicator(object):
     def getmacdrelates(self,lst,count):
         d = lst[count]
         c_close = d[2]
-        date = d[0]
+        date = str(d[0]).split(" ")[0]
         if not self.macds:
             n_s_ema = c_close
             n_f_ema = c_close
@@ -195,7 +212,7 @@ class StockIndicator(object):
             n_macd = 0
             n_cross_dist = 0
         else:
-            pre_date = lst[count-1][0]
+            pre_date = str(lst[count-1][0]).split(" ")[0]
             s_ema = self.macds[pre_date]["ema26"]
             f_ema = self.macds[pre_date]["ema12"]
             dem = self.macds[pre_date]["dem9"]
@@ -216,29 +233,67 @@ class StockIndicator(object):
     def setenv(self,collection):
         self.count = 0
         self.collection = collection
-        data = self._getdata(collection)
-        self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
-        self.datalst = self.rehabilitation(self.datalst)
-        self.macds = self.getmacdsfromdb(collection)
+        p_filt = [{"$sort":{"date":-1}},{"$limit":20}]
+        self.p_data = self._getdata(collection,db="stockdatas",filt=p_filt,is_aggregate=True)
+        if self.p_data.empty:
+            self.duplicatedate = []
+            limt=3000
+            self.isinit = True
+        else:
+            self.duplicatedate = [l[0] for l in self.p_data[["date"]].values]
+            limt=self.yearperid+self.perid
+            self.isinit = False
         
-    def getmacdsfromdb(self,collection):
+        filt = [{"$sort":{"date":-1}},{"$limit":limt}]
+        data = self._getdata(collection,out=self.formatlist,filt=filt,is_aggregate=True)
+        self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
+        
+        if self.checkexright(self.p_data,self.datalst):
+            filt = [{"$sort":{"date":-1}},{"$limit":3000}]
+            data = self._getdata(collection,out=self.formatlist,filt=filt,is_aggregate=True)
+            self.datalst = [l for l in data[self.formatlist].fillna(0).values if l[1] !=0]
+            self.isinit = True
+            
+        self.datalst.reverse()
+        self.datalst = self.rehabilitation(self.datalst)
+        self.macds = self.getmacdsfromdb()
+    
+    def checkexright(self,data,datas):
+        date=data.iloc[[0]].date.values[0]
+        tmp = datas[0]
+        for i in datas[1:]:
+            if str(i[0]).split(" ")[0] >= date:
+                if i[2] != tmp[6]:
+                    print ("{} is ex-right now!".format(self.collection))
+                    return True
+                tmp = i
+            else:
+                return False       
+        
+    def getmacdsfromdb(self,):
         '''output:{date:[macd,ema12,ema26,diff12_26,dem9,cross_dist]}
         '''
-        if self.isinit:return {}
+        macdskey = ["date","macd","ema12","ema26","diff12_26","dem9","cross_dist"]
+        rst = {}
+        if self.isinit:
+            return rst
         else:
-            pass
+            for i in self.p_data[macdskey].values:
+                rst[i[0]] = {"macd":i[1],"ema12":i[2],"ema26":i[3],"diff12_26":i[4],"dem9":i[5],"cross_dist":i[6]}
+            return rst
     
     def setlooplist(self,lst=[]):
         if not lst:
             self.looplist = self.m.getallcollections("ml_security_table")
+            try:self.looplist.remove("stock")
+            except:pass#remove not stock collection
         else:
             self.looplist = lst
         return self.looplist
     
-    def _getdata(self,collection="600455.SH",db="ml_security_table",out=[],isfilt=True,filt={}):
-        if not out:out = self.formatlist
-        if isfilt and not filt: filt = {"date":{"$gt": self.startdate}}
-        query = self.m.read_data(db,collection,filt=filt)
+    
+    def _getdata(self,collection="600455.SH",db="ml_security_table",out=[],isfilt=True,filt={},is_aggregate=False):
+        query = self.m.read_data(db,collection,filt=filt,is_aggregate=is_aggregate)
         return self.formatquery(query,out)
     
     def formatquery(self,query,out):
@@ -247,9 +302,9 @@ class StockIndicator(object):
         out:the fields you want to convert into dataframe 
         '''
         if not out:
-            query = [i for i in query.sort("date", 1)]
+            query = [i for i in query]
         else:
-            query = [{k:i[k] for k in out} for i in query.sort("date", 1)]
+            query = [{k:i[k] for k in out} for i in query]
         return pd.DataFrame(query)
     
     def rehabilitation(self,lst):
@@ -272,7 +327,7 @@ class StockIndicator(object):
             piece = self.recount(lst,sc,ec,weight)
             result.extend(piece)
             sc = ec
-        result.extend(self.recount(lst,ec,-1,1))
+        result.extend(lst[sc:])
         return result
     
     def recount(self,lst,sc,ec,weight):
@@ -281,175 +336,9 @@ class StockIndicator(object):
             rst.append([line[0],line[1],*[i*weight for i in line [2:]]])
         return rst     
     
-    
-    
-    
-    
-    
-    
-#############################################################################
-    
-    
-    
-    
-    
-    
-    
-    def getallindictorperday(self,indictors=[]):
-        '''input: 
-             indictors :should be a list of list,example:[(name,func),(name,func)]
-        '''
-        indicts={}
-        for i in indictors:
-            indicts[i[0]] = i[1]()
-        return indicts
-    
-    
-    def setmacdlist(self,lst):
-        s_ema = f_ema = lst[0][2]
-        dem = 0
-        self.difflist = []
-        self.demlist = []
-        self.macdlist = []
-        self.s_ema = []
-        self.f_ema = []
-        
-        for line in lst:
-            s_ema = (s_ema*(self.emaslow-1)+ 2*line[2])/(self.emaslow+1)
-            f_ema = (f_ema*(self.emafast-1)+ 2*line[2])/(self.emafast+1)
-            dif = f_ema-s_ema
-            self.difflist.append(dif)
-            self.s_ema.append(s_ema)
-            self.f_ema.append(f_ema)
-           
-            dem = (dem*(self.demday-1)+ 2*dif)/(self.demday+1)
-            self.demlist.append(dem)
-            self.macdlist.append(2*(dif-dem))
-        
-        return self.macdlist
-    
-    #MACD related indicators
-    #Moving average: there will be unstable period in the beginning
-    
-    #List of all indicators with completed "close" list
-    def EMA_list(self, lst, timeperiod=9):
-        ema = []
-        current = lst[0][2]
-        for i in lst:
-            current = (current*(timeperiod-1)+ 2*i[2])/(timeperiod+1)
-            ema.append(current)
-        return ema
-                
-    def DIF_list(self, lst, fastperiod=12, slowperiod=26):
-        dif = []
-        dif_t = []
-        s_ema = self.EMA_list(lst, slowperiod)
-        f_ema = self.EMA_list(lst, fastperiod)
-        for i in range(len(lst)):
-            current = f_ema[i]-s_ema[i]
-            dif.append(current)
-            dif_t.append([0,0,current,0])
-        return dif, dif_t
-        
-    def DEA_list(self, lst, fastperiod=12, slowperiod=26, signalperiod=9):
-        _,dif = self.DIF_list(lst,fastperiod,slowperiod)
-        return self.EMA_list(dif, signalperiod)
-        
-    def MACD_list(self, lst, fastperiod=12, slowperiod=26, signalperiod=9):
-        macd = []
-        dif,dif_t = self.DIF_list(lst,fastperiod,slowperiod)
-        dea = self.EMA_list(dif_t, signalperiod)
-        for i in range(len(lst)):
-            macd.append(2*(dif[i]-dea[i]))
-        return macd
-
-    #updating value with previous and current value
-    '''
-    input: 
-        history: Sorted list by date: 
-                 [["date","EMA12","EMA26","DIF","DEA","MACD"],[...],...]
-                 ! Last one should be yesterday's data
-        current: float: Todays' close price
-    output:
-        current indicator value.
-    '''
-    def EMA(self, last, current, timeperiod = 10):
-        return (current*(timeperiod-1)+ 2*last)/(timeperiod+1)
-    
-    def EMA12(self, history, current):
-        return self.EMA(history[-1][1], current, 12)
-        
-    def EMA26(self, history, current):
-        return self.EMA(history[-1][2], current, 26)
-    
-    def DIF(self, history, current):
-        return (self.EMA12(history, current)-self.EMA26(history, current))
-    
-    def DEA(self, history, current):
-        return self.EMA(history[-1][3], self.DIF(history, current), 9)
-    
-    def MACD(self, history, current):
-        return 2*(self.DIF(history, current)-self.DEA(history, current))
-    
-    '''
-    input: 
-        history: Sorted list by date: 
-                 [["date","EMA12","EMA26","DIF","DEA","MACD"],[...],...]
-                 ! Last one should be last available data
-        current: [["date","close"],...]
-                 Earliest day which is not updated with indicators to todays' close price
-    output:
-        Indicator value list in date order:
-            [["date","EMA12","EMA26","DIF","DEA","MACD"],[...],...]
-    '''
-    def MACD_update(self, history, current):
-        '''
-        Update MACD related all values: inc. EMA12, EMA26, DIF, DEA, MACD
-        '''
-        #To be added: update them into database
-        updates = []
-        indicators = history[-1]
-        for i in range(len(current)):
-            indicators = [current[i][0],self.EMA12([indicators], current[i][1]), \
-                self.EMA26([indicators], current[i][1]), \
-                self.DIF([indicators], current[i][1]), \
-                self.DEA([indicators], current[i][1]), \
-                self.MACD([indicators], current[i][1])]
-            updates.append(indicators)
-        return updates
-    
-    
-    def islowestvolume(self,data,section=60):
-        if (len(data) >= section) and (data[0] == min(data[0:section])):
-            return True
-        return False
-    
-    def getaverageprice(self,data,):
-        pass
-    
-    def getnewindex(self,datas,newdata,l,base=0):
-        '''datas:should be sorted from min to max,
-           newdats: the data need to check the position in the sorted datas
-           l:len of data
-           base:first position of the datas in origin datas
-        '''
-        index = int(l/2)
-        if datas[index] > newdata:
-            if l==1:return base
-            d = datas[:index]
-            nl = index
-            return self.getnewindex(d,newdata,nl,base)
-        elif datas[index] < newdata:
-            if l<=2:return base+l
-            d = datas[index+1:] 
-            nl = int((l-1)/2)
-            return self.getnewindex(d,newdata,nl,base+index+1)
-        elif datas[index] == newdata:
-            return base+index
-    
 if __name__ == '__main__':
     db = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
-    s= StockIndicator(init=True,mdb=db)
+    s= StockIndicator(mdb=db)
     s.setlooplist()
     s.updateallstocks2db()
     

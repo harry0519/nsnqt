@@ -48,13 +48,16 @@ class MongoDB(BaseDB):
         db = eval("self.client.{}".format(db))
         return db[collection].drop()
 
-    def read_data(self,db,collection,filt={}): 
+    def read_data(self,db,collection,filt={},is_aggregate=False): 
         '''
         colections:  collection in mongodb ,which your want to get data from
-        filt: filter condition
+        filt: filter condition,when is_aggregate is True ,filt could be a list or dict
         '''
         db = eval("self.client.{}".format(db))
-        return db[collection].find(filt)
+        if is_aggregate:
+            return db[collection].aggregate(filt)
+        else:
+            return db[collection].find(filt)
     
     def update_data(self,data,db,collection,filt={},isupsert=False): 
         '''
