@@ -88,7 +88,7 @@ class StockIndicator(object):
         return rst
     
     def checkstartdate(self,date,):
-        if date > self.duplicatedate[1]:
+        if date > self.duplicatedate[0]:
             return True
         return False
     
