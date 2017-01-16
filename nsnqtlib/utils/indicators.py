@@ -81,7 +81,6 @@ class StockIndicator(object):
             tradedata = self.getperdaytradedata(currentdata)
             filt = {"date":date}
             data = {'$set': tradedata}
-            print (date)
             indics = self.mapindicwithfunc(self.datalst,count)
             for k,v in indics:
                 data['$set'][k] = v
