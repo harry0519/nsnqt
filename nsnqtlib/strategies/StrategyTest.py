@@ -41,12 +41,19 @@ class StrategyTest():
         self.df = trade_history[["stock","buy_date","sell_date","holddays","profit","buy_money"]]
         self.start_date = min(dt.datetime.strptime(i, "%Y-%m-%d") for i in self.df["buy_date"].values)
         self.end_date = max(dt.datetime.strptime(i, "%Y-%m-%d") for i in self.df["sell_date"].values)
-        
+        '''
+        self.etf300 = ts.get_hist_data('hs300',start='2016-10-06')#[['p_change']]
+        print(self.etf300)
+        print(self.etf300.loc['2016-10-31',['p_change']].values[0])
+        '''
+
+        self.m = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
+        self.formatlist = ["date","volume","close","high","low","open","pre_close"]
+        self.buy_ind = []
+        self.sell_ind = []
+        #self._getETF300()
+ 
         if self.accurate_metrics:
-            self.m = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
-            self.formatlist = ["date","volume","close","high","low","open","pre_close"]
-            self.buy_ind = []
-            self.sell_ind = []
             self._getTradeStockData()
         return
         
@@ -80,6 +87,16 @@ class StrategyTest():
             self.sell_ind.append(sell[self.formatlist].values[0].tolist())
         #use index as list index to find correspond buy & sell data
         self.df["index"]=self.df.index.tolist()
+        return
+        
+    #初始化时获得ETF300对应的指标和价格
+    #仅有2005年后的数据，使用之前的数据可能会报错
+    def _getETF300(self):
+        print("Start: -----Use ETF300 as baseline-----")
+        filt = {"date":{"$gt": self.start_date, "$lt": self.end_date+dt.timedelta(days=1)}}
+        ETF300 = self._getdata("",collection="000300.SH", filt=filt)
+        
+
         return
 
 
@@ -169,7 +186,7 @@ class StrategyTest():
     #    erp: Portfolio expected return rate 
     #         within fixed timeperiod (e.g.yearly/monthly) 
     #    rf: risk-free/expect rate of interest  
-    def Sharpe(self, erp=[], rf=0):
+    def Sharpe(self, erp=[], rf=0.03):
         a = np.array(erp)
         sharpe = (np.mean(a)-rf)/np.std(a,ddof=1)
         return sharpe
@@ -292,7 +309,7 @@ class StrategyTest():
         for i in self.df.values:
             selldate = i[2]
             sell_history[dt.datetime.strptime(selldate,"%Y-%m-%d").strftime("%Y-%m-%d")].append(i)
-
+            
         current = self.principal
         for date in datelist:
             if len(sell_history[date]) > 0:
@@ -301,6 +318,15 @@ class StrategyTest():
                     current = current + sell_stock[4]*sell_stock[5] - commission
                     self.total_commission += commission
             current_money[date] = current
+            
+
+            '''
+            try:
+                print(date)
+                print(self.etf300.loc[date,['p_change']].values[0])
+            except:
+                pass
+            '''
     
         #最终结果，用于收益率计算      
         self.final_value = current
@@ -377,7 +403,7 @@ class StrategyTest():
         plt.hist(df["daily"].values, bins=bins, alpha=0.5)   
         plt.xlabel('value', fontsize=16)  
         plt.ylabel('count', fontsize=16)  
-        plt.title('Daily profit for each deal' , fontsize=16)  
+        plt.title('Daily profit for each deal' , fontsize=16)
         plt.tick_params(axis='both', which='major', labelsize=12)  
         plt.show()
         
@@ -397,6 +423,9 @@ class StrategyTest():
             erp.append(monthly[month][2])
         
         #checkpoints
+        print("Start: -----Trade duration-----")
+        print(self.start_date.strftime('Start date: %Y-%m-%d'))
+        print(self.end_date.strftime('End date: %Y-%m-%d'))
         
         ar,final_return,years = self.AnnualReturn()
         result = "Fail" if (ar-1) < self.annualreturn_thres else "Pass"
@@ -517,12 +546,13 @@ if __name__ == '__main__':
     #Regression test
     
     #df = pd.read_csv('positiongain.csv')
-    df = pd.read_csv('ETF.csv')
-    #df = pd.read_csv('MACD.csv')
+    #df = pd.read_csv('ETF.csv')
+    df = pd.read_csv('MACD.csv')
     s = TradeSimulate(df, piece=2)
     newdf = s.TradeSimulate()
     
     a = StrategyTest(100, newdf, Accurate_metrics = False)
     a.BackTest()
     
-    #print(ts.get_hist_data('hs300',start='2011-01-06',end='2014-01-16'))
+
+    #print(ts.get_realtime_quotes('399300'))
