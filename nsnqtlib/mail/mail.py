@@ -58,8 +58,8 @@ class mail():
         message = self.message
         self.smtp.sendmail(sender,receivers,message)
 
-# if __name__ == '__main__':
-#     m = mail()
-#     m.setmessage("我就是测试下", "test for send mail in python")
-#     m.sendmail()
-#     m.disconnect()
+if __name__ == '__main__':
+    m = mail()
+    m.setmessage("我就是测试下", "test for send mail in python")
+    m.sendmail()
+    m.disconnect()
