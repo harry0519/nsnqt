@@ -283,7 +283,7 @@ if __name__ == '__main__':
 #     s.saveprocedure2db()
     df = pd.read_csv('macd.csv')
     report = reportforms(df)
-    report.cumulative_graph()
+    #report.cumulative_graph()
     report.positiongain(20)
     buy = s.getprocedure('procedure_records.csv')
     print (buy)
