@@ -27,7 +27,7 @@ class StrategyTest():
     def __init__(self,principal, trade_history, \
                  Sharpe_thres=0.5, AnnualReturn_thres=0.2, MDD_thres=0.2,\
                  SuccessRatio_thres = 0.7,
-                 Accurate_metrics = True, Fixed_fee=0.002):
+                 Accurate_metrics = True, Fixed_fee=0.002, Chart_display=False):
         self.principal = principal
         self.trade_history = trade_history
         self.sharpe_thres = Sharpe_thres
@@ -38,6 +38,7 @@ class StrategyTest():
         self.total_commission = 0
         self.accurate_metrics = Accurate_metrics
         self.fixed_fee = Fixed_fee
+        self.chart_display = Chart_display
         self.df = trade_history[["stock","buy_date","sell_date","holddays","profit","buy_money"]]
         self.start_date = min(dt.datetime.strptime(i, "%Y-%m-%d") for i in self.df["buy_date"].values)
         self.end_date = max(dt.datetime.strptime(i, "%Y-%m-%d") for i in self.df["sell_date"].values)
@@ -287,12 +288,13 @@ class StrategyTest():
         #最终结果，用于收益率计算      
         self.final_value = current
         
-        print("Chart: -----Daily value chart-----")
-        newdf = pd.DataFrame(data=[total_money[i] for i in datelist], \
+        if self.chart_display:  
+            print("Chart: -----Daily value chart-----")
+            newdf = pd.DataFrame(data=[total_money[i] for i in datelist], \
                                    index=datelist,columns=["totalmoney"])
-        newdf["date"] = newdf.index
-        newdf.plot(x="date", y="totalmoney", kind='area')
-        plt.show()
+            newdf["date"] = newdf.index
+            newdf.plot(x="date", y="totalmoney", kind='area')
+            plt.show()
         
         return total_money
 
@@ -331,12 +333,13 @@ class StrategyTest():
         #最终结果，用于收益率计算      
         self.final_value = current
         
-        print("Chart: -----Daily value chart-----")
-        newdf = pd.DataFrame(data=[current_money[i] for i in datelist], \
-                                   index=datelist,columns=["totalmoney"])
-        newdf["date"] = newdf.index
-        newdf.plot(x="date", y="totalmoney", kind='area')
-        plt.show()
+        if self.chart_display:
+            print("Chart: -----Daily value chart-----")
+            newdf = pd.DataFrame(data=[current_money[i] for i in datelist], \
+                                       index=datelist,columns=["totalmoney"])
+            newdf["date"] = newdf.index
+            newdf.plot(x="date", y="totalmoney", kind='area')
+            plt.show()
         return current_money
         
     #月净值历史, 月度年化收益率
@@ -371,13 +374,14 @@ class StrategyTest():
                 calendar.monthrange(date_time.year, date_time.month)[1]
             monthly_money[month] = [total_money,growth,annual_yield]
             last_money = daily[date]
-    
-        print("Chart: -----Monthly value chart-----")
-        newdf = pd.DataFrame(data=[monthly_money[i] for i in monthlist], \
-                                   index=monthlist,columns=["totalmoney","growth","annualyield"])
-        newdf["month"] = newdf.index
-        newdf.plot(x="month", y="totalmoney", kind='area')
-        plt.show()
+        
+        if self.chart_display:
+            print("Chart: -----Monthly value chart-----")
+            newdf = pd.DataFrame(data=[monthly_money[i] for i in monthlist], \
+                                       index=monthlist,columns=["totalmoney","growth","annualyield"])
+            newdf["month"] = newdf.index
+            newdf.plot(x="month", y="totalmoney", kind='area')
+            plt.show()
 
         return monthly_money
     
@@ -413,7 +417,8 @@ class StrategyTest():
         accumulated = []
         erp = []
         #收益率分布图
-        self.ProfitHistogram()
+        if self.chart_display:
+            self.ProfitHistogram()
         #收益曲线
         monthly = self.monthly_accumulated()
         month_list = sorted(monthly.keys())
