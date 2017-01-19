@@ -187,7 +187,7 @@ class StrategyTest():
     #    erp: Portfolio expected return rate 
     #         within fixed timeperiod (e.g.yearly/monthly) 
     #    rf: risk-free/expect rate of interest  
-    def Sharpe(self, erp=[], rf=0.03):
+    def Sharpe(self, erp=[], rf=0.039):
         a = np.array(erp)
         sharpe = (np.mean(a)-rf)/np.std(a,ddof=1)
         return sharpe
@@ -493,7 +493,7 @@ class TradeSimulate():
               Daily accumulated history during whole trade
     '''
     
-    def __init__(self, tradable_list, principal=100, piece=100):
+    def __init__(self, tradable_list, principal=100, piece=50):
         self.piece = piece
         self.principal = principal
         self.df = tradable_list[["stock","buy_date","sell_date","holddays","profit"]]
@@ -549,15 +549,46 @@ if __name__ == '__main__':
     #Buy points test
     #Sell points test
     #Regression test
-    
+    #print(ts.get_realtime_quotes('399300'))
+    '''
     #df = pd.read_csv('positiongain.csv')
     #df = pd.read_csv('ETF.csv')
     df = pd.read_csv('macd.csv')
     s = TradeSimulate(df, piece=50)
     newdf = s.TradeSimulate()
     
-    a = StrategyTest(100, newdf, Accurate_metrics = False)
+    a = StrategyTest(100, newdf, Accurate_metrics = False, Chart_display = True)
     a.BackTest()
+    '''
+    sharpe = []
+    MDD = []
+    Piece = []
+    df = pd.read_csv('macd.csv')
+    for i in range(20,201):
+        accumulated = []
+        erp = []
+        s = TradeSimulate(df, piece=i)
+        newdf = s.TradeSimulate()
+        
+        a = StrategyTest(100, newdf, Accurate_metrics = False)
+        #收益曲线
+        monthly = a.monthly_accumulated()
+        month_list = sorted(monthly.keys())
+        #统计结果
+        for month in month_list:
+            accumulated.append(monthly[month][0])
+            erp.append(monthly[month][2])
+        sharpe.append(a.Sharpe(erp))
+        MDD.append(a.MDD(accumulated))
+        Piece.append(i)
     
+    
+    chartdf = pd.DataFrame(Piece, columns=['piece'])
+    chartdf.index = chartdf['piece']
+    chartdf['sharpe'] = sharpe
+    chartdf['MDD'] = MDD
+    chartdf.plot(x="piece", kind='line')
+    plt.savefig("MACD_MDD.png")
+        
 
-    #print(ts.get_realtime_quotes('399300'))
+    
