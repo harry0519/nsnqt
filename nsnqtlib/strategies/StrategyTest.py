@@ -547,7 +547,7 @@ if __name__ == '__main__':
     
     #df = pd.read_csv('positiongain.csv')
     #df = pd.read_csv('ETF.csv')
-    df = pd.read_csv('MACD.csv')
+    df = pd.read_csv('macd.csv')
     s = TradeSimulate(df, piece=2)
     newdf = s.TradeSimulate()
     
