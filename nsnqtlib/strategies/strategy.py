@@ -220,7 +220,7 @@ class reportforms(object):
         print(newdf)
         newdf["range"] = newdf.index
         newdf.plot(x="range",y=["sharpe","MDD"], kind="line")
-        plt.show()
+#         plt.show()
     
     def cumulative_graph(self,):
         date = [i.strftime('%Y-%m-%d') for i in pd.date_range(self.start, self.end)]
@@ -245,8 +245,8 @@ class reportforms(object):
         newdf.plot(x="date", y="addup_averageprofit", kind='line')
 #         newdf.plot(x="date", y="buynums", kind='line')
         
-#         plt.savefig("addup_averageprofit.png")
-        plt.show()  
+        plt.savefig("addup_averageprofit.png")
+#         plt.show()  
 
 # class paramopt(object):
 #     def __init__(self,**p):

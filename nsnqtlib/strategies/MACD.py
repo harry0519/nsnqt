@@ -280,7 +280,7 @@ if __name__ == '__main__':
     s.savetrading2csv("macd.csv")
     s.saveholding2csv("macdhold.csv")
     s.saveprocedure("procedure_records.csv")
-#     s.saveprocedure2db()
+    s.saveprocedure2db()
     df = pd.read_csv('macd.csv')
     report = reportforms(df)
     #report.cumulative_graph()
