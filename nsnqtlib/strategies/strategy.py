@@ -1,13 +1,12 @@
 # -*- coding:utf-8 -*-
 from  nsnqtlib.db.mongodb import MongoDB
-from nsnqtlib.tkpi.momentum import *
+from nsnqtlib.tkpi.momentum import evaluation_m
 import time
 import datetime
 import pandas as pd
 import matplotlib
 # Force matplotlib to not use any Xwindows backend.
 matplotlib.use('Agg')
-
 import matplotlib.pyplot as plt
 import random
 from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
