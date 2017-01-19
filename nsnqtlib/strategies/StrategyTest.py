@@ -553,7 +553,7 @@ if __name__ == '__main__':
     #df = pd.read_csv('positiongain.csv')
     #df = pd.read_csv('ETF.csv')
     df = pd.read_csv('macd.csv')
-    s = TradeSimulate(df, piece=2)
+    s = TradeSimulate(df, piece=50)
     newdf = s.TradeSimulate()
     
     a = StrategyTest(100, newdf, Accurate_metrics = False)
