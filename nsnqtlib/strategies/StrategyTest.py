@@ -3,12 +3,15 @@
 import numpy as np
 import pandas as pd
 import datetime as dt
+
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import calendar
 import random
 import tushare as ts
 
-from  nsnqtlib.db.mongodb import MongoDB
+from nsnqtlib.db.mongodb import MongoDB
 from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
 
 #基于交易记录进行策略测试
