@@ -50,13 +50,13 @@ class StrategyTest():
         print(self.etf300)
         print(self.etf300.loc['2016-10-31',['p_change']].values[0])
         '''
-
+        '''
         self.m = MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
         self.formatlist = ["date","volume","close","high","low","open","pre_close"]
         self.buy_ind = []
         self.sell_ind = []
         #self._getETF300()
- 
+        '''
         if self.accurate_metrics:
             self._getTradeStockData()
         return
@@ -230,7 +230,7 @@ class StrategyTest():
     def AnnualReturn(self):
         final_return = self.final_value/self.principal
         years = (self.end_date - self.start_date).days/365.25
-        return np.power(final_return, 1/years), final_return, years
+        return np.power(final_return, 1/years)-1, final_return-1, years
     
     #日净值历史
     def daily_accumulated(self):
@@ -436,17 +436,17 @@ class StrategyTest():
         print(self.end_date.strftime('End date: %Y-%m-%d'))
         
         ar,final_return,years = self.AnnualReturn()
-        result = "Fail" if (ar-1) < self.annualreturn_thres else "Pass"
+        result = "Fail" if ar < self.annualreturn_thres else "Pass"
         total_deals = self.TotalDeals()
         montly_deals = total_deals/years/12
-        expect_return = (final_return-1)/total_deals
+        expect_return = final_return/total_deals
         print("%s: -----Profit Test-----"%result)
         print("[Result]: Initial %.2f --> %.2f within %.1f years."\
               %(self.principal,self.final_value, years))
         print("[Result]: Total commission %.2f."\
               %(self.total_commission))
         print("[Result]: Total return %.2f%%. Annual return %.2f%%"\
-              %((final_return-1)*100, (ar-1)*100))
+              %((final_return)*100, (ar)*100))
         print("[Result]: Total %d deals, monthly average %.2f deals"%(total_deals, montly_deals))
         print("[Result]: Average profit %.2f%% for each deal"%(expect_return*100))
         
@@ -455,7 +455,7 @@ class StrategyTest():
         print("[Result]: Max single earn %.2f%%. Max single loss %.2f%%"\
               %(self.MaxSingleEarn()*100,self.MaxSingleLoss()*100))
         sr = self.SuccessRatio()
-        result = "Fail" if ar < self.successratio_thres else "Pass"
+        result = "Fail" if sr < self.successratio_thres else "Pass"
         print("[Result]: Success rate is %.2f%%"%(sr*100))
         
         sharpe = self.Sharpe(erp)
@@ -557,7 +557,7 @@ if __name__ == '__main__':
     #df = pd.read_csv('positiongain.csv')
     #df = pd.read_csv('ETF.csv')
     df = pd.read_csv('macd.csv')
-    s = TradeSimulate(df, piece=50)
+    s = TradeSimulate(df, piece=200)
     newdf = s.TradeSimulate()
     
     a = StrategyTest(100, newdf, Accurate_metrics = False, Chart_display = True)
@@ -566,6 +566,7 @@ if __name__ == '__main__':
     sharpe = []
     MDD = []
     Piece = []
+    annual_return = []
     df = pd.read_csv('macd.csv')
     for i in range(20,201):
         accumulated = []
@@ -584,14 +585,19 @@ if __name__ == '__main__':
         sharpe.append(a.Sharpe(erp))
         MDD.append(a.MDD(accumulated))
         Piece.append(i)
+        
+        ar,final_return,years = a.AnnualReturn()
+        annual_return.append(ar)
     
     
     chartdf = pd.DataFrame(Piece, columns=['piece'])
     chartdf.index = chartdf['piece']
     chartdf['sharpe'] = sharpe
     chartdf['MDD'] = MDD
+    chartdf['annual_return'] = annual_return
     chartdf.plot(x="piece", kind='line')
+    #plt.show()
     plt.savefig("MACD_MDD.png")
-        
+    
 
     
