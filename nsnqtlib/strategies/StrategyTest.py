@@ -1,4 +1,5 @@
 
+import sys, getopt
 
 import numpy as np
 import pandas as pd
@@ -30,7 +31,8 @@ class StrategyTest():
     def __init__(self,principal, trade_history, \
                  Sharpe_thres=0.5, AnnualReturn_thres=0.2, MDD_thres=0.2,\
                  SuccessRatio_thres = 0.7,
-                 Accurate_metrics = True, Fixed_fee=0.002, Chart_display=False):
+                 Accurate_metrics = True, Fixed_fee=0.002, Chart_display=False,\
+                 Chart_save = False):
         self.principal = principal
         self.trade_history = trade_history
         self.sharpe_thres = Sharpe_thres
@@ -42,6 +44,7 @@ class StrategyTest():
         self.accurate_metrics = Accurate_metrics
         self.fixed_fee = Fixed_fee
         self.chart_display = Chart_display
+        self.chart_save = Chart_save
         self.df = trade_history[["stock","buy_date","sell_date","holddays","profit","buy_money"]]
         self.start_date = min(dt.datetime.strptime(i, "%Y-%m-%d") for i in self.df["buy_date"].values)
         self.end_date = max(dt.datetime.strptime(i, "%Y-%m-%d") for i in self.df["sell_date"].values)
@@ -291,13 +294,16 @@ class StrategyTest():
         #最终结果，用于收益率计算      
         self.final_value = current
         
-        if self.chart_display:  
+        if(self.chart_display or self.chart_save):  
             print("Chart: -----Daily value chart-----")
             newdf = pd.DataFrame(data=[total_money[i] for i in datelist], \
                                    index=datelist,columns=["totalmoney"])
             newdf["date"] = newdf.index
             newdf.plot(x="date", y="totalmoney", kind='area')
+        if self.chart_display:
             plt.show()
+        if self.chart_save:
+            plt.savefig("daily_money.png")
         
         return total_money
 
@@ -336,13 +342,17 @@ class StrategyTest():
         #最终结果，用于收益率计算      
         self.final_value = current
         
-        if self.chart_display:
+        if(self.chart_display or self.chart_save):
             print("Chart: -----Daily value chart-----")
             newdf = pd.DataFrame(data=[current_money[i] for i in datelist], \
                                        index=datelist,columns=["totalmoney"])
             newdf["date"] = newdf.index
             newdf.plot(x="date", y="totalmoney", kind='area')
+        if self.chart_display:
             plt.show()
+        if self.chart_save:
+            plt.savefig("daily_money.png")
+            
         return current_money
         
     #月净值历史, 月度年化收益率
@@ -378,13 +388,16 @@ class StrategyTest():
             monthly_money[month] = [total_money,growth,annual_yield]
             last_money = daily[date]
         
-        if self.chart_display:
+        if(self.chart_display or self.chart_save):
             print("Chart: -----Monthly value chart-----")
             newdf = pd.DataFrame(data=[monthly_money[i] for i in monthlist], \
                                        index=monthlist,columns=["totalmoney","growth","annualyield"])
             newdf["month"] = newdf.index
             newdf.plot(x="month", y="totalmoney", kind='area')
+        if self.chart_display:
             plt.show()
+        if self.chart_save:
+            plt.savefig("monthly_money.png")
 
         return monthly_money
     
@@ -399,8 +412,13 @@ class StrategyTest():
         plt.xlabel('value', fontsize=16)  
         plt.ylabel('count', fontsize=16)  
         plt.title('Profit for each deal' , fontsize=16)  
-        plt.tick_params(axis='both', which='major', labelsize=12)  
-        plt.show()
+        plt.tick_params(axis='both', which='major', labelsize=12)
+        if self.chart_display:
+            plt.show()
+        if self.chart_save:
+            plt.savefig("Profit_per_deal_distribution.png")
+        
+        plt.figure(0)
         print("Chart: -----Daily profit per deal chart-----")
         daily=[]
         for i in self.df.values:
@@ -409,10 +427,13 @@ class StrategyTest():
         df = pd.DataFrame(daily, columns=["daily"])
         plt.hist(df["daily"].values, bins=bins, alpha=0.5)   
         plt.xlabel('value', fontsize=16)  
-        plt.ylabel('count', fontsize=16)  
-        plt.title('Daily profit for each deal' , fontsize=16)
-        plt.tick_params(axis='both', which='major', labelsize=12)  
-        plt.show()
+        plt.ylabel('count', fontsize=16)
+        plt.title('Daily profit distribution' , fontsize=16)
+        plt.tick_params(axis='both', which='major', labelsize=12) 
+        if self.chart_display:
+            plt.show()
+        if self.chart_save:
+            plt.savefig("Profit_daily_distribution.png")
         
         
     #策略回测：收益率+指标报告
@@ -420,7 +441,7 @@ class StrategyTest():
         accumulated = []
         erp = []
         #收益率分布图
-        if self.chart_display:
+        if(self.chart_display or self.chart_save):
             self.ProfitHistogram()
         #收益曲线
         monthly = self.monthly_accumulated()
@@ -548,56 +569,93 @@ class TradeSimulate():
         
         return resultdf
 
+def strategytesthelp():
+    print("-f filename: Tradable list from your strategy")
+    print("    File format should be .csv, default use macd.csv")
+    print('    Content format: "index(title is none)" "stock","buy_date","sell_date","holddays","profit"')
+    print("    date format: %Y-%m-%d")
+    print("-h: Show help information")
+    print("-s <show/save>: Show chart or save as png")
+    print("-t <backtest/piecetest>: backtest -- back test;  piecetest -- (20-200)pieces test")
+        
 if __name__ == '__main__':
     #Buy points test
     #Sell points test
     #Regression test
     #print(ts.get_realtime_quotes('399300'))
-    '''
-    #df = pd.read_csv('positiongain.csv')
-    #df = pd.read_csv('ETF.csv')
-    df = pd.read_csv('macd.csv')
-    s = TradeSimulate(df, piece=200)
-    newdf = s.TradeSimulate()
+    filename = "macd.csv"
+    show_chart = "save"
+    test_type = "backtest"
+    opts, args = getopt.getopt(sys.argv[1:], "hf:s:t:")
     
-    a = StrategyTest(100, newdf, Accurate_metrics = False, Chart_display = True)
-    a.BackTest()
-    '''
-    sharpe = []
-    MDD = []
-    Piece = []
-    annual_return = []
-    df = pd.read_csv('macd.csv')
-    for i in range(20,201):
-        accumulated = []
-        erp = []
-        s = TradeSimulate(df, piece=i)
+    for op, value in opts:
+        if op == "-f":
+            filename = value
+        elif op == "-s":
+            show_chart = value
+        elif op == "-t":
+            test_type = value
+            
+        elif op == "-h":
+            strategytesthelp()
+            sys.exit()
+   
+    if test_type == "backtest":
+        df = pd.read_csv(filename)
+        s = TradeSimulate(df, piece=100)
         newdf = s.TradeSimulate()
         
-        a = StrategyTest(100, newdf, Accurate_metrics = False)
-        #收益曲线
-        monthly = a.monthly_accumulated()
-        month_list = sorted(monthly.keys())
-        #统计结果
-        for month in month_list:
-            accumulated.append(monthly[month][0])
-            erp.append(monthly[month][2])
-        sharpe.append(a.Sharpe(erp))
-        MDD.append(a.MDD(accumulated))
-        Piece.append(i)
+        if show_chart == "show":
+            chart_display = True
+            save_chart = False
+        elif show_chart == "save": 
+            chart_display = False
+            save_chart = True
+        else:
+            chart_display = save_chart = False
+        a = StrategyTest(100, newdf, Accurate_metrics = False, \
+                         Chart_display = chart_display, Chart_save = save_chart)
+        a.BackTest()
+    elif test_type == "piecetest":
+        sharpe = []
+        MDD = []
+        Piece = []
+        annual_return = []
+        df = pd.read_csv(filename)
+        for i in range(20,201):
+            accumulated = []
+            erp = []
+            s = TradeSimulate(df, piece=i)
+            newdf = s.TradeSimulate()
+            
+            a = StrategyTest(100, newdf, Accurate_metrics = False)
+            #收益曲线
+            monthly = a.monthly_accumulated()
+            month_list = sorted(monthly.keys())
+            #统计结果
+            for month in month_list:
+                accumulated.append(monthly[month][0])
+                erp.append(monthly[month][2])
+            sharpe.append(a.Sharpe(erp))
+            MDD.append(a.MDD(accumulated))
+            Piece.append(i)
+            
+            ar,final_return,years = a.AnnualReturn()
+            annual_return.append(ar)
         
-        ar,final_return,years = a.AnnualReturn()
-        annual_return.append(ar)
-    
-    
-    chartdf = pd.DataFrame(Piece, columns=['piece'])
-    chartdf.index = chartdf['piece']
-    chartdf['sharpe'] = sharpe
-    chartdf['MDD'] = MDD
-    chartdf['annual_return'] = annual_return
-    chartdf.plot(x="piece", kind='line')
-    #plt.show()
-    plt.savefig("MACD_MDD.png")
+        chartdf = pd.DataFrame(Piece, columns=['piece'])
+        chartdf.index = chartdf['piece']
+        chartdf['sharpe'] = sharpe
+        chartdf['MDD'] = MDD
+        chartdf['annual_return'] = annual_return
+        chartdf.plot(x="piece", kind='line')
+        if show_chart == "show":
+            plt.show()
+        elif show_chart == "save":
+            plt.savefig("Sharpe_MDD.png")
+    else:
+        print("-t error: No type available as %s"%test_type)
+        strategytesthelp()
     
 
     
