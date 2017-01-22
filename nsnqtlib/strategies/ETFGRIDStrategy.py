@@ -2,7 +2,7 @@
 from nsnqtlib.strategies.strategy import basestrategy,reportforms
 import pandas as pd
 import tushare as ts
-from datetime  import datetime
+from datetime import datetime
 
 class ETFstrategy(basestrategy):
     '''
@@ -19,10 +19,7 @@ class ETFstrategy(basestrategy):
         self.bought = False
         self.tempstatus = []
         self.collection = ''
-        self.newformatlist = ['0','1','2','3','4']
         self.procedurevol = ["stock", "date", "close", "startprice", "buytimes", "selltimes"]
-        #self.newformatlist = ["index","code","date", "close", "startingprice", "buytimes"]
-        #self.startingprice
 
         super(ETFstrategy, self).__init__(startdate, enddate)
 
@@ -56,16 +53,15 @@ class ETFstrategy(basestrategy):
     def _getdata(self,collection="600455.SH",db="ml_security_table",out=[],isfilt=True,filt={}):
         self.collection = collection
         if db == "tushare":
-            #query = ts.get_hist_data(collection, start='2005-01-01', end='2016-12-23', )
+            #d1 = datetime.datetime.now()
+            #d2 = d1 + datetime.timedelta(-240)
+            #d1 = d1.strftime('%Y-%m-%d')
+            #d2 = d2.strftime('%Y-%m-%d')
+            #query = ts.get_hist_data(collection, start=d2, end=d1, )
             query = ts.get_hist_data(collection)
-            #print(collection)
             query['date'] = query.index
             query = query.sort_index(axis=0, ascending=True)
             query['pre_close'] = query['close'].shift(1)
-            #query.to_csv(collection + '.csv')
-            #print(collection)
-            #print(query)
-            #out = self.formatlist
             return query
         elif db == 'local':
             query = pd.read_csv(str(collection) + '.csv')
@@ -76,37 +72,16 @@ class ETFstrategy(basestrategy):
             if isfilt and not filt: filt = {"date": {"$gt": self.startdate}}
             query = self.m.read_data(db, collection, filt=filt)
             return self.formatquery(query, out)
-            '''
-            query = self.m.read_data(db,collection,filt={"date":{"$gt": self.startdate}})
-            #query.to_csv('db_'+collection + '.csv')
-            out = self.formatlist
-            return self.formatquery(query, out)
-          '''
-
-    '''
-    def _getdata(self,collection="600455.SH",db="ml_security_table"):
-        #query = pd.read_csv(str(collection) + '.csv', parse_dates=['date'])
-        #print(query)
-        query = self.m.read_data(db,collection,filt={"date":{"$gt": self.startdate}})
-        out = self.formatlist
-        return self.formatquery(query,out)
-    '''
 
     def historyreturn(self, collection, par):
         trading_record = []
         holding_record = []
-        #print(collection)
         data = self._getdata(collection,"tushare")
         self.selltimes = 0
         self.buytimes = 0
         self.startingprice = 0
         self.bought = False
-        #print(data)
         lst = [l for l in data[self.formatlist].fillna(0).values if l[1] != 0]
-        #lst.sort(key=lambda x: x[3])
-        #l = [x[0] for x in lst]
-        #df = pd.DataFrame(lst)
-        #df.to_csv(collection+'ETFGridl.csv')
         count = 0
         for line in lst[:]:
             isbuy = self.buy(lst, count, par)
@@ -114,24 +89,16 @@ class ETFstrategy(basestrategy):
             for b in holding_record[:]:
                 issell, traderecord = self.sell(lst, count, b)
                 if issell:
-                #if issell and self.buytimes > 0:
                     holding_record.remove(b)
                     trading_record.append(traderecord)
-                    #print (traderecord)
-                   # self.buytimes = self.buytimes -1
-                    #if self.buytimes == 0:
-                     #   self.selltimes = 0
                     break
 
             if isbuy:
-                #holding_record.append((line, count, collection))
                 print(collection)
                 holding_record.append(([i for i in line], count, collection))
                 print(count)
 
             count += 1
-        #df = pd.DataFrame(lst)
-        #df.to_csv(collection+'ETFGridlst.csv')
         return trading_record, holding_record
 
     def looplist_historyreturn(self, df):
@@ -476,7 +443,7 @@ if __name__ == '__main__':
     #s.setlooplist()
     s.looplist_historyreturn(df_stocklist)
     s.savetrading2csv()
-    s.saveholding2csv()
+    #s.saveholding2csv()
     #print(s.tempstatus)
     #print(s.lateststatus)
     #df = pd.DataFrame(s.lateststatus)
