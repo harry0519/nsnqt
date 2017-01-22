@@ -154,22 +154,13 @@ class ETFstrategy(basestrategy):
             self.startingprice = close
             print('startingprice'+str(self.startingprice)+' ')
             print('statingdate'+str(dat))
-            #return True
-        #return False
 
         if self.ETFGridbuycondition1(close, self.startingprice, self.buytimes) and self.startingprice > 0:
-            #if self.bought == False:
-                #print('self.bought:false')
             print('buy:'+str(close))
             self.buytimes = self.buytimes + 1
             self.bought = True
-            #print('buy date:'+str(dat)+'  buy price:'+str(close)+' startingprice'+str(self.startingprice))
-            #print('buy times:'+str(self.buytimes))
-            #print('position:'+str(position))
             rst = True
-            #return True
         self.setprocedure(lst, count)
-        #print(self.temstatus)
         self.lateststatus.append(self.tempstatus)
         return rst
 
@@ -306,47 +297,6 @@ class ETFstrategy(basestrategy):
             return True
         return False
 
-    def mean_volume(self, data):
-        m_vol = sum(data) / len(data)
-        return m_vol
-
-    def buy_condition1(self, vol, vol_data, vol_weight=1.2):
-        if vol >= vol_weight * self.mean_volume(vol_data):
-            return True
-        return False
-
-    def buy_condition2(self, close, last_high):
-        if close >= last_high:
-            return True
-        return False
-
-    def buy_condition3(self, close, high, grads=0.2):
-        if (high - close) / high >= grads:
-            return True
-        return False
-
-    def buy_condition4(self, close, low, grads=0.05):
-        if (close - low) / low <= grads:
-            return True
-        return False
-
-    def buy_condition5(self, currentday, highday, grads=60):
-        if currentday - highday >= grads:
-            return True
-        return False
-
-    def condition6(self, dat, startdate):
-        newdat = pd.to_datetime(dat)
-        newdat = newdat.strftime('%Y-%m-%d')
-        newstartdate = pd.to_datetime(startdate)
-        newstartdate = newstartdate.strftime('%Y-%m-%d')
-        # print(newdat)
-        # print(newstartdate)
-        if newdat > newstartdate:
-            #print(newdat)
-            return True
-        return False
-
     def ETFGridbuycondition1(self, close, startingprice, buytime):
         if close <= startingprice *(1- buytime * 0.05) and buytime < 6:
             #print(self.buytimes)
@@ -362,70 +312,6 @@ class ETFstrategy(basestrategy):
     def ETFGridsellcondition1(self, close, startingprice, selltime):
         if close > startingprice * (1.1 + selltime*0.05) and self.bought == True:
             #print('sell times: '+str(self.selltimes))
-            return True
-        return False
-
-    def condition8(self, close, low, pre_close):
-        if low > pre_close:
-             return True
-        return False
-
-    def condition9(self, close, pre_close):
-        if (close - pre_close) / pre_close < 0.099:
-             return True
-        return False
-
-    def condition10(self, close):
-        if close < 100:
-             return True
-        return False
-
-    def MA_judge_result(self, lst, count):
-        self.curr_MA = self.MA_condition(lst,count)
-        if self.pre_MA == False and self.curr_MA == True:
-            self.pre_MA = self.curr_MA
-            return True
-        self.pre_MA = self.curr_MA
-        return False
-
-    def MA_condition(self,lst,count):
-        if self.MA_result(lst,count,5) > self.MA_result(lst,count, 10) and \
-                self.MA_result(lst, count, 10) > self.MA_result(lst, count, 20) and \
-                self.MA_result(lst, count, 20) > self.MA_result(lst, count, 30):
-             #print(count)
-             return True
-        return False
-
-    def MA_result(self, lst,count, meanday):
-        meanlist = [i[2] for i in lst[count - meanday + 1:count + 1]]
-        return sum(meanlist) / meanday
-
-    def moneyfundbuycondiction(self, close, pre_close):
-        if close - pre_close < -0.05 and \
-                close - pre_close > -1:
-             return True
-        return False
-
-    def Sellcondition1(self, lst, high, count, maxday):
-        meanlist = [i[2] for i in lst[count - maxday + 1:count + 1]]
-        if high > max(meanlist):
-            return True
-        return False
-
-    def Sellcondition2(self, lst, high, low, close):
-        if high - low > 0:
-            if (close-low)/(high-close) < 0.2:
-                return True
-        return False
-
-    def Sellcondition3(self, close):
-        if close > 130:
-            return True
-        return False
-
-    def moneyfundsellcondiction(self, close):
-        if close > self.buyprice and \
-                close - self.buyprice < 1:
             return True
         return False
 
