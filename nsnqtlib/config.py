@@ -1,10 +1,20 @@
 from nsnqtlib.servers import serverlist 
+import configparser as cp
 
+# config.ini template
+#[db]
+#user=xxx
+#passwd=xxx
+config = cp.ConfigParser()
+config.read('config.ini')
+
+
+# print(config.sections())
 #Use Aliyun environment settings
 DB_SERVER = serverlist.ALIYUN_SERVERS_IP
 DB_PORT = serverlist.ALIYUN_MONGODB_PORT
-USER = serverlist.ALIYUN_DBUSER_NAME
-PWD = serverlist.ALIYUN_DB_PWD
+USER = config['db']['user'] #serverlist.ALIYUN_DBUSER_NAME
+PWD =  config['db']['passwd']  #serverlist.ALIYUN_DB_PWD
 AUTHDBNAME = "admin"
 
 # #Use default local server

@@ -87,7 +87,7 @@ def MDD(accumulated=[],period=0):
 #RSI
 #BIAS
 
-#日累积资金历史
+#日净值历史
 def daily_accumulated(principal,trade_history):
     '''
     Daily accumulated money
@@ -130,7 +130,7 @@ def daily_accumulated(principal,trade_history):
     '''
     return current_money
 
-#月度资金累积历史, 月度年化收益率
+#月净值历史, 月度年化收益率
 #结算日：月末最后一天
 def monthly_accumulated(principal,trade_history):
     '''

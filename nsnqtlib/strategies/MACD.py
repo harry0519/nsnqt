@@ -9,7 +9,7 @@ class macd(basestrategy):
            ��д��������������������
     '''
     
-    def __init__(self,startdate=(2016, 1, 1),enddate=[],emafast=12,emaslow=26,demday=9):
+    def __init__(self,startdate=(2011, 1, 1),enddate=[],emafast=12,emaslow=26,demday=9):
         self.emafast = emafast
         self.emaslow = emaslow
         self.demday = demday
@@ -274,7 +274,7 @@ class realtimecheck():
 
         
 if __name__ == '__main__':
-    s = macd(startdate=(2011, 1, 1))
+    s = macd(startdate=(2000, 1, 1))
     s.setlooplist()
     s.looplist_historyreturn()
     s.savetrading2csv("macd.csv")
@@ -283,7 +283,7 @@ if __name__ == '__main__':
     s.saveprocedure2db()
     df = pd.read_csv('macd.csv')
     report = reportforms(df)
-    report.cumulative_graph()
+#     report.cumulative_graph()
     report.positiongain(20)
     buy = s.getprocedure('procedure_records.csv')
     print (buy)

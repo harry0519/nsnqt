@@ -1,13 +1,12 @@
 # -*- coding:utf-8 -*-
 from  nsnqtlib.db.mongodb import MongoDB
-from nsnqtlib.tkpi.momentum import *
+from nsnqtlib.tkpi.momentum import evaluation_m
 import time
 import datetime
 import pandas as pd
 import matplotlib
 # Force matplotlib to not use any Xwindows backend.
 matplotlib.use('Agg')
-
 import matplotlib.pyplot as plt
 import random
 from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
@@ -220,7 +219,7 @@ class reportforms(object):
         print(newdf)
         newdf["range"] = newdf.index
         newdf.plot(x="range",y=["sharpe","MDD"], kind="line")
-        plt.show()
+#         plt.show()
     
     def cumulative_graph(self,):
         date = [i.strftime('%Y-%m-%d') for i in pd.date_range(self.start, self.end)]
@@ -245,8 +244,8 @@ class reportforms(object):
         newdf.plot(x="date", y="addup_averageprofit", kind='line')
 #         newdf.plot(x="date", y="buynums", kind='line')
         
-#         plt.savefig("addup_averageprofit.png")
-        plt.show()  
+        plt.savefig("addup_averageprofit.png")
+#         plt.show()  
 
 # class paramopt(object):
 #     def __init__(self,**p):

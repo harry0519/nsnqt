@@ -8,6 +8,7 @@ from  nsnqtlib.db.mongodb import MongoDB
 from datetime  import datetime
 import tushare as ts
 import argparse
+from nsnqtlib.mail import mail
 
 class trade():
     def __init__(self,user="04yylxsxh@163.com",password="185284",zuhe="ZH995042"):
@@ -152,12 +153,14 @@ def parseargs():
     
 if __name__ == '__main__':
     t = trade()
+    t.connetdb()
+    
     if parseargs().action == "sell":
-        t.connetdb()
         if  parseargs().stoploss: 
             t.justsellit(stoploss=True)
         else:
             t.justsellit()
+#         m.setmessage("sell list:{}".format(""))
         
     elif parseargs().action == "buy":
 #         print (t.user.session.get("https://xueqiu.com/p/update?action=holdings&symbol=ZH995042").text)
@@ -165,6 +168,10 @@ if __name__ == '__main__':
         t.getbuylist()
         bylst = t.buyitnow()
         print ("buy list:{}".format(bylst))
+        m = mail.mail()
+        m.setmessage("buylist:{}".format(bylst))
+        m.sendmail()
+        m.disconnect()
         t.savebackup2db(bylst)
     
 
