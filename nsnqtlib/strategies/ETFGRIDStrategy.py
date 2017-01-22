@@ -220,6 +220,7 @@ class ETFstrategy(basestrategy):
         #lst[count][6] = position
         return position
 
+    #取实时数据，根据历史回测数据比较是否存在交易机会
     def getprocedure(self, filename="procedure_records.csv", isdb=False, collection="processstatus", db="etfgrid"):
         '''"stock","date","data","s_ema","f_ema","diff","dem","macd","status"
         '''
@@ -441,9 +442,15 @@ if __name__ == '__main__':
     print("test:"+stock)
     #df.iat[count, 0]
     #s.setlooplist()
+    '''股票回测数据需要每天更新，这地方需要跑下最新的数据，现在还是取全部数据'''
+    '''回测数据存入数据库有点问题'''
+    '''每天实时数据和历史回测数据比较好了，没有完成每天去跑'''
     s.looplist_historyreturn(df_stocklist)
     s.savetrading2csv()
+
+    '''s.saveholding2csv有点问题'''
     #s.saveholding2csv()
+
     #print(s.tempstatus)
     #print(s.lateststatus)
     #df = pd.DataFrame(s.lateststatus)
