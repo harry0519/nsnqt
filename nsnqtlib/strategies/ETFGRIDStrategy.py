@@ -101,7 +101,7 @@ class ETFstrategy(basestrategy):
             count += 1
         return trading_record, holding_record
 
-    def looplist_historyreturn(self, df):
+    def looplist_historyreturn(self, df, actiontype="regression"):
         error_list = []
         count = 0
         df_len = len(df.index)
@@ -115,12 +115,14 @@ class ETFstrategy(basestrategy):
             #print(par)
             stock_name = str(df.iat[count, 0])
             try:
-                tr,hr = self.historyreturn(stock_name, par)
-                #self.lateststatus.append(self.tempstatus)
-                self.trading_records.extend(tr)
-                self.holding_records.extend(hr)
-                #self.getprocedure(isdb=True, collection=stock_name)
-                self.saveprocedure2db(collection=stock)
+                if actiontype == 'regression':
+                    tr,hr = self.historyreturn(stock_name, par)
+                    #self.lateststatus.append(self.tempstatus)
+                    self.trading_records.extend(tr)
+                    self.holding_records.extend(hr)
+                    self.saveprocedure2db(collection=stock_name)
+                elif actiontype == 'trade':
+                    self.getprocedure(isdb=True, collection=stock_name)
             except:
                 error_list.append(stock_name)
             count = count + 1
@@ -344,12 +346,10 @@ if __name__ == '__main__':
     #s.saveprocedure()
     #s.saveprocedure2db(collection=stock)
 
-
-    #new_df = ts.get_realtime_quotes('159920')
+    #new_df = ts.get_realtime_quotes(stock)
     #print(new_df)
-    #new_df = ts.get_realtime_quotes('159920')
     #print(new_df['ask'].iloc[0])
-    #print(df.ix[0, 'ask'])
+    #print(new_df.ix[0, 'ask'])
     #print(new_df[['code','name','price','bid','ask','volume','amount','time']])
     '''
     ls = s.getcurrentdata()
