@@ -19,6 +19,8 @@ from nsnqtlib.servers.serverlist import LOCAL_SERVER_IP,MONGODB_PORT_DEFAULT
 
 
 dblogger = logging.getLogger()
+start_day = "2017-1-24"#datetime.today()
+end_day   = "2017-1-26"#datetime.today()
 
 def init_log():
     dblogger.setLevel(logging.DEBUG)
@@ -48,6 +50,7 @@ def stock_daily_update():
     local_db = mongodb.MongoDB()
     ali_db   = mongodb.MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
 
+    update_thread = 10
     failure_count = 0
     success_count = 0
     start = clock()
@@ -56,11 +59,10 @@ def stock_daily_update():
     for j in range(security_list_size):
         stock_name = security_list.Data[0][j]
 
-        if stock_name[0] == '3': #=='000/001,002' #=='600/601/603,602'
+        if stock_name[0] == '0':
             #ipo_day = company_general.Data[2][j]
-            #stock_data = local_wnd.get_history_data(stock_name,regular_fields, datetime.today(),datetime.today())
-            today = "2017-1-6"#datetime.today() #"2017-1-3"
-            stock_data = local_wnd.get_history_data(stock_name,regular_fields,today,today)
+
+            stock_data = local_wnd.get_history_data(stock_name,regular_fields,start_day,end_day)
 
             if stock_data.ErrorCode == 0:
                 local_db.save_data("ml_security_table",stock_name,par_list_stock,stock_data)
@@ -73,8 +75,117 @@ def stock_daily_update():
                 dblogger.error("%s failed, errcode:%d" %(stock_name, stock_data.ErrorCode))
 
     end = clock()
-    print("\nupdated %d/%d stocks, used %ds" %(success_count,security_list_size,end-start) )
+    print("success=%d, failed=%d, total=%d stocks, used %ds" %(success_count,failure_count,security_list_size,end-start) )
+    
+def update_one_index(wnd,localdb,remotedb,stock_name,start_day,end_day,db="ml_security_table"):
+    regular_fields = wnd.get_par_string(par_list_stock)
+   
+    stock_data = wnd.get_history_data(stock_name,regular_fields,start_day,end_day)
 
+    if stock_data.ErrorCode == 0:
+        localdb.save_data(db,stock_name,par_list_stock,stock_data)
+        remotedb.save_data(db,stock_name,par_list_stock,stock_data) 
+        dblogger.error("%s update success" %(stock_name))     
+    else:
+        failure_count = failure_count +1
+        dblogger.error("%s failed, errcode:%d" %(stock_name, stock_data.ErrorCode))
+
+    return (stock_data.ErrorCode == 0)
+
+def index_daily_update():
+    dblogger.info("==========start to update all index==========")
+    # 399001.SZ 深圳成指，1995-1-23上市，但可以反算到1991-4-3
+    # 399005.SZ 中小板指，2006-1-24上市，但可以反算到2005-6-7
+    # 399006.SZ 创业板指，2010-6-1
+    # 000001.SH 上证综指，1991-7-15上市，但可以反算到1990-12-19
+    # 000300.SH/399300.SZ 沪深300，2005-4-8上市，但可以反算到2002-1-4
+
+    local_wnd = WindQuote.WndQuery()        
+    local_wnd.connect()
+    start = clock()
+  
+    local_db = mongodb.MongoDB()
+    ali_db   = mongodb.MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
+
+    update_one_index(local_wnd,local_db, ali_db, "399001.SZ",start_day,end_day)
+    update_one_index(local_wnd,local_db, ali_db, "399005.SZ",start_day,end_day)
+    update_one_index(local_wnd,local_db, ali_db, "399006.SZ",start_day,end_day)
+    update_one_index(local_wnd,local_db, ali_db, "000001.SH",start_day,end_day)
+    update_one_index(local_wnd,local_db, ali_db, "000300.SH",start_day,end_day)
+
+    # listedsecuritygeneralview OR sectorconstituent?
+    '''
+    w.wset("sectorconstituent","sectorid=1000009163000000") # 上证ETF
+    w.wset("sectorconstituent","sectorid=1000009164000000") # 深圳ETF
+    w.wset("sectorconstituent","sectorid=1000023348000000") # A,B均上市母代码
+    w.wset("sectorconstituent","sectorid=1000023349000000") # A,B均上市A代码
+    w.wset("sectorconstituent","sectorid=1000023350000000") # A,B军上市B代码
+    w.wset("sectorconstituent","sectorid=a101020600000000") # 可转债
+    
+    w.wset("sectorconstituent","sectorid=a001010100000000") # 全部上市A股
+    w.wset("sectorconstituent","sectorid=1000022276000000") # 全部上市美股
+    w.wset("sectorconstituent","sectorid=a005010100000000") # NASDAQ 上市股票
+    w.wset("sectorconstituent","sectorid=a005010200000000") # NYSE   上市股票
+    
+    
+    w.wset("sectorconstituent","sectorid=a599010101000000") # 中金所所有品种
+    w.wset("sectorconstituent","sectorid=a599010201000000") # 上期所全部期货品种
+    w.wset("sectorconstituent","sectorid=a599010301000000") # 大连期货交易所所有品种
+    w.wset("sectorconstituent","sectorid=a599010401000000") # 郑州期货交易所所有品种
+    '''
+def update_one_ab_base(wnd,localdb,remotedb,stock_name,start_day,end_day,db="ab"):
+    stock_data = wnd.get_history_data(stock_name,"nav",start_day,end_day)
+
+    if stock_data.ErrorCode == 0:
+        #localdb.save_nav(db,stock_name,par_list_stock,stock_data)
+        remotedb.save_nav(db,stock_name,par_list_stock,stock_data) 
+        dblogger.error("%s update success" %(stock_name))     
+    else:
+        failure_count = failure_count +1
+        dblogger.error("%s failed, errcode:%d" %(stock_name, stock_data.ErrorCode))
+
+    return (stock_data.ErrorCode == 0)
+
+def create_ab_base(sectorid,wind,local_db,remote_db,db_name,type=0):
+    list_etf = wind.wset("sectorconstituent","sectorid="+sectorid)
+
+    list_size = len(list_etf.Data[1])
+    failure_count = 0
+    success_count = 0
+
+    for j in range(list_size):
+        stock_name = list_etf.Data[1][j]
+
+        init_day = wind.get_init_day(stock_name,type)
+        create_end_day = "2017-1-23"
+
+        if update_one_ab_base(wind,local_db, remote_db, stock_name,init_day,create_end_day,db_name):
+            success_count = success_count + 1
+        else:
+            failure_count = failure_count + 1
+
+    print("ab base update done. success=%d,failure=%d" %(success_count,failure_count) )
+
+def create_one_etf(sectorid,wind,local_db,remote_db,db_name,type=0):
+    list_etf = wind.wset("sectorconstituent","sectorid="+sectorid)
+
+    list_size = len(list_etf.Data[1])
+    failure_count = 0
+    success_count = 0
+
+    for j in range(list_size):
+        stock_name = list_etf.Data[1][j]
+
+        init_day = wind.get_init_day(stock_name,type)
+        create_end_day = "2017-1-23"
+
+        if update_one_index(wind,local_db, remote_db, stock_name,init_day,create_end_day,db_name):
+            success_count = success_count + 1
+        else:
+            failure_count = failure_count + 1
+
+    print("etf update done. success=%d,failure=%d" %(success_count,failure_count) )
+ 
 def update_all_stock():
     local_wnd = WindQuote.WndQuery()        
     local_wnd.connect()
@@ -223,13 +334,18 @@ def validation_test():
     print("match=%d,not match=%d, match rate=%f" %(success_count,failure_count,success_count/(success_count+failure_count)) )
 
 def get_bond_list():
-    bond_list = ["129031.SZ","128013.SZ","128012.SZ","128011.SZ","128010.SZ","128009.SZ","128008.SZ","128007.SZ","128006.SZ",\
+    cbond_list = ["129031.SZ","128013.SZ","128012.SZ","128011.SZ","128010.SZ","128009.SZ","128008.SZ","128007.SZ","128006.SZ",\
                  "128005.SZ","128004.SZ","128003.SZ","128002.SZ","128001.SZ","127003.SZ","127002.SZ","127001.SZ","126729.SZ",\
                  "125887.SZ","125731.SZ","125089.SZ","123001.SZ","120001.SZ","113501.SH","113010.SH","113009.SH","113008.SH",\
                  "113007.SH","113006.SH","113005.SH","113003.SH","113002.SH","113001.SH","110035.SH","110034.SH","110033.SH",\
                  "110032.SH","110031.SH","110030.SH","110029.SH","110028.SH","110027.SH","110025.SH","110024.SH","110022.SH",\
                  "110020.SH","110019.SH","110018.SH","110017.SH","110016.SH","110015.SH","110013.SH","110012.SH","110011.SH",\
                  "110009.SH","110007.SH","110003.SH"]
+    etfsz_list=["159901.SZ","159902.SZ","159903.SZ","159905.SZ","159906.SZ","159907.SZ","159908.SZ","159909.SZ","159910.SZ",\
+                "159911.SZ","159912.SZ","159913.SZ","159915.SZ","159916.SZ","159918.SZ","159919.SZ","159920.SZ","159921.SZ",\
+                "159922.SZ","159923.SZ","159924.SZ","159925.SZ","159927.SZ","159928.SZ","159929.SZ","159930.SZ","159931.SZ",\
+                "159932.SZ","159933.SZ","159935.SZ","159936.SZ","159938.SZ","159939.SZ","159940.SZ","159942.SZ","159943.SZ",\
+                "159944.SZ","159945.SZ","159946.SZ","159948.SZ","159949"]                 
     carrydate_list=[]                 
     local_wnd = WindQuote.WndQuery()        
     hwnd = local_wnd.connect()
@@ -240,11 +356,26 @@ def get_bond_list():
         carrydate_list.append(wsd.Data[0][0].strftime('%Y-%m-%d'))
         print(wsd.Codes[0])
     print(carrydate_list)
+
 if __name__ == '__main__':
     init_log()
-    stock_daily_update()   
+    #stock_daily_update()   
+    #index_daily_update()
+    
     #validation_test()
-    #get_bond_list()
+
+
+    local_wnd = WindQuote.WndQuery()
+    local_db = mongodb.MongoDB()
+    ali_db   = mongodb.MongoDB(DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME)
+
+    # get full list of target
+    create_one_etf("1000009163000000",local_wnd,local_db,ali_db,"etf")# 上证ETF
+    create_one_etf("1000009164000000",local_wnd,local_db,ali_db,"etf")# 深圳ETF
+    create_one_etf("a101020600000000",local_wnd,local_db,ali_db,"cbond")# 可转债
+    create_ab_base("1000023348000000",local_wnd,local_db,ali_db,"ab",2)# A,B均上市母代码
+    create_one_etf("1000023349000000",local_wnd,local_db,ali_db,"ab")# A,B均上市A代码
+    create_one_etf("1000023350000000",local_wnd,local_db,ali_db,"ab")# A,B军上市B代码
 
 
     
