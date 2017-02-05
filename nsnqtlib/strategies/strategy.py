@@ -143,6 +143,21 @@ class basestrategy(object):
         df = pd.DataFrame(self.trading_records,columns=self.savevols)
         df.to_csv(filename)
         return
+
+    def savetrading2db(self, db="regressiontraderesult", strategyname="strategytradersult"):
+        db = eval("self.m.client.{}".format(db))
+        bulk = db[strategyname].initialize_ordered_bulk_op()
+        for line in self.trading_records:
+            bulk.find({'buy_date': line[1]}).upsert().update( \
+                {'$set': {'stock': line[0], \
+                          'buy_date': line[1], \
+                          'sell_date': line[2], \
+                          'holddays': line[3], \
+                          'profit': line[4], \
+                          'features': line[5], \
+                          }})
+        bulk.execute()
+        return
         
     def saveholding2csv(self,filename="holding_records.csv"):
         df = pd.DataFrame(self.holding_records,columns=["stock","date","buy_data","features"])
