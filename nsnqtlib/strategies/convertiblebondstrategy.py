@@ -3,7 +3,7 @@ from nsnqtlib.strategies.strategy import basestrategy
 import pandas as pd
 import tushare as ts
 
-class cashoptionstrategy(basestrategy):
+class convertiblebondstrategy(basestrategy):
     '''
            重写买入条件和卖出条件，
     '''
@@ -12,7 +12,7 @@ class cashoptionstrategy(basestrategy):
         self.pre_MA = False
         self.curr_MA = False
 
-        super(cashoptionstrategy, self).__init__(startdate, enddate)
+        super(convertiblebondstrategy, self).__init__(startdate, enddate)
 
     # 获取需要交易股票列表
     def import_stocklist(self, stocklistname):
@@ -41,6 +41,7 @@ class cashoptionstrategy(basestrategy):
             count = count + 1
         return df
 
+    '''
     def _getdata(self,collection="600455.SH",db="ml_security_table"):
         if db == "ml_security_table":
             query = self.m.read_data(db,collection,filt={"date":{"$gt": self.startdate}})
@@ -50,16 +51,46 @@ class cashoptionstrategy(basestrategy):
         elif db == "tushare":
             #query = ts.get_hist_data(collection, start='2005-01-01', end='2016-12-23', )
             query = ts.get_hist_data(collection)
-            query['pre_close'] = query['close'].shift(1)
-            query.to_csv('tushare_' + collection + '.csv')
-            print(collection)
             print(query)
+            query['date'] = query.index
+            query = query.sort_index(axis=0, ascending=True)
+            query['pre_close'] = query['close'].shift(1)
             #out = self.formatlist
             return query
         elif db == 'local':
             query = pd.read_csv(str(collection) + '.csv')
             #out = self.formatlist
             return query
+    '''
+
+    def _getdata(self,collection="600455.SH",db="ml_security_table",out=[],isfilt=True,filt={}):
+        self.collection = collection
+        if db == "tushare":
+            #d1 = datetime.datetime.now()
+            #d2 = d1 + datetime.timedelta(-240)
+            #d1 = d1.strftime('%Y-%m-%d')
+            #d2 = d2.strftime('%Y-%m-%d')
+            #query = ts.get_hist_data(collection, start=d2, end=d1, )
+            query = ts.get_hist_data(collection)
+            #print(query)
+            query['date'] = query.index
+            query = query.sort_index(axis=0, ascending=True)
+            query['pre_close'] = query['close'].shift(1)
+            return query
+        elif db == 'local':
+            query = pd.read_csv(str(collection) + '.csv')
+            #out = self.formatlist
+            return query
+        else:
+            if not out: out = self.formatlist
+            if isfilt and not filt: filt = {"date": {"$gt": self.startdate}}
+            query = self.m.read_data(db, collection, filt=filt)
+            #query.to_csv(collection)
+            #df = pd.DataFrame(query)
+            #query.to_csv(collection+'new.csv')
+            print('downloaded')
+            return self.formatquery(query, out)
+
 
     '''
     def _getdata(self,collection="600455.SH",db="ml_security_table"):
@@ -74,7 +105,7 @@ class cashoptionstrategy(basestrategy):
         trading_record = []
         holding_record = []
         #print(collection)
-        data = self._getdata(collection,'local')
+        data = self._getdata(collection,'tushare')
         #df = pd.DataFrame(data)
         #df.to_csv(collection+'.csv')
         #print(data)
@@ -97,8 +128,10 @@ class cashoptionstrategy(basestrategy):
             count += 1
         return trading_record, holding_record
 
-    def looplist_historyreturn(self, df):
+    def looplist_historyreturn(self, df, actiontype="regression"):
         error_list = []
+        buylist = []
+        selllist = []
         count = 0
         df_len = len(df.index)
         column_num = len(df.count())
@@ -110,15 +143,20 @@ class cashoptionstrategy(basestrategy):
                 columncount = columncount + 1
             print(par)
             stock_name = str(df.iat[count, 0])
-            #try:
-            tr,hr = self.historyreturn(stock_name, par)
-            self.trading_records.extend(tr)
-            self.holding_records.extend(hr)
-            #except:
-                #error_list.append(stock_name)
+            try:
+                if actiontype == 'regression':
+                    tr,hr = self.historyreturn(stock_name, par)
+                    self.trading_records.extend(tr)
+                    self.holding_records.extend(hr)
+                elif actiontype == 'trade':
+                    buy, sell = self.getprocedure(isdb=True, collection=stock_name)
+                    buylist.extend(buy)
+                    selllist.extend(sell)
+            except:
+                error_list.append(stock_name)
             count = count + 1
         print(error_list)
-        return self.trading_records,self.holding_records
+        return self.trading_records,self.holding_records, buylist, selllist
 
     def buy(self, lst, count, par):
         ''' input:
@@ -213,6 +251,53 @@ class cashoptionstrategy(basestrategy):
                     buy_date = buy_date.strftime('%Y-%m-%d')
                     return True, [collection, buy_date, sell_date, hold_days, (close - buy_price) / buy_price, '']
        '''
+
+        # 取实时数据，根据历史回测数据比较是否存在交易机会
+    def getprocedure(self, filename="procedure_records.csv", isdb=False, collection="processstatus", db="etfgrid"):
+        '''"stock","date","data","s_ema","f_ema","diff","dem","macd","status"
+        '''
+        buy = []
+        sell = []
+        newlist = []
+        newdatalist = []
+        #out = ["stock", "date", "close", "startprice", "buytimes", "selltimes"]
+        '''
+        if isdb:
+            # df = self._getdata(collection, db, out=out, isfilt=False)[out]
+            #df = self._getdata(collection, db, out=out, isfilt=False)
+            df = self._getdata(collection, 'tushare')
+            # print(df)
+        else:
+            # df = pd.read_csv(filename)[out]
+            df = pd.read_csv(filename)
+       '''
+        # df.to_csv(collection)
+        #df_len = len(df.index)
+        #stock = str(df['stock'].iloc[0])
+        #print(stock)
+        #pre_close = float(df['close'].iloc[df_len-1])
+        #print(pre_close)
+
+        new_df = ts.get_realtime_quotes(collection)
+        print('Stock from Tushare is ok: ' + collection)
+        print(new_df)
+        #pre_close = float(new_df['pre_close'].iloc[0])
+        #print('pre_close:' + str(pre_close))
+        price = float(new_df['ask'].iloc[0])
+        print('price:' + str(price))
+        #high = float(new_df['high'].iloc[0])
+        # price = 0.89
+        #df_len = len(df.index) - 1
+        #if df_len < 200: return buy, sell
+        #startprice = df['startprice'].iloc[df_len]
+        #buynumber = df['buytimes'].iloc[df_len]
+        #sellnumber = df['selltimes'].iloc[df_len]
+        if price < 110:
+            buy.append(collection)
+        elif price > 130:
+            sell.append(collection)
+        # print(buy)
+        return buy, sell
 
     def stopgain_condition(self, buy_price, current_price, grads=0.1):
         if (current_price - buy_price) / buy_price >= grads:
@@ -328,11 +413,12 @@ class cashoptionstrategy(basestrategy):
         return False
 
 if __name__ == '__main__':
-    s = cashoptionstrategy()
+    s = convertiblebondstrategy()
     df_stocklist = s.import_stocklist("convertiblebond")
     print(df_stocklist)
     #s.setlooplist()
-    s.looplist_historyreturn(df_stocklist)
+    #s.looplist_historyreturn(df_stocklist)
+    s.looplist_historyreturn(df_stocklist, actiontype="trade")
     s.savetrading2csv()
     s.saveholding2csv()
     #report = reportforms(df)
