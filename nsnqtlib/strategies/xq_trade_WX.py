@@ -2,12 +2,18 @@
 import easytrader
 import random
 from nsnqtlib.strategies.ETFGRIDStrategy import ETFstrategy
+from nsnqtlib.strategies.moneyfundstrategy import moneyfundstrategy
+from nsnqtlib.strategies.cashoption_strategy import cashoptionstrategy
+from nsnqtlib.strategies.convertiblebondstrategy import convertiblebondstrategy
+from nsnqtlib.strategies.FundBGRIDStrategy import FundBstrategy
 from click.decorators import password_option
 from nsnqtlib.config import DB_SERVER, DB_PORT, USER, PWD, AUTHDBNAME
 from  nsnqtlib.db.mongodb import MongoDB
 from datetime import datetime
 import tushare as ts
 import argparse
+from nsnqtlib.mail import mail
+import pandas as pd
 
 class trade():
     def __init__(self, user="wangxian.111@163.com", password="nokiax56wang", zuhe="ZH1008383"):
@@ -16,6 +22,7 @@ class trade():
         self.buylist = []
         self.selllist = []
         self.limitnum = 20
+        self.m = MongoDB()
 
     def getcurrentdata(self):
         '''code：代码, name:名称 ,changepercent:涨跌幅 , trade:现价 ,open:开盘价 ,high:最高价, low:最低价, settlement:昨日收盘价 ,
@@ -61,8 +68,27 @@ class trade():
         data = {'$set': {'status': 'SELL'}}
         self.m.update_data(data, db, collection, filt={"stock": stock})
 
+    def getholdlst(self, holddate, db="etfgrid", collection="operatequeue"):
+        out = ["stock", "buymoney", "date", "startprice", "status"]
+        #df = self.m._getdata(collection, db, out=out, filt={"date": holddate})
+        #df = self.m.read_data(db, collection, filt={"date": holddate})
+        #df = self.m.read_data(db, collection)
+        df = self.m.read_data(db, collection, filt={"status": "HOLD"})
+        #if isfilt and not filt: filt = {"date": {"$gt": self.startdate}}
+        #query = self.m.read_data(db, collection, filt=filt)
+        print('hold list:')
+        print(df)
+        #holdlist = [l for l in df[['date', 'startprice', "buytimes", 'close']].values]
+        return
+        #data = {'$set': {'status': 'SELL'}}
+        #self.m.update_data(data, db, collection, filt={"stock": stock})
+
     def buyitnow(self):
         localbackup = []
+        holdlist = []
+        tradedate = datetime.today().strftime('%Y-%m-%d')
+        holdlist = self.getholdlst(tradedate)
+        print(holdlist)
         balance = self.getbalance()
         lst = self.getposition()
         holdnum = len(lst)
@@ -94,7 +120,7 @@ class trade():
         self.m = MongoDB(DB_SERVER, DB_PORT, USER, PWD, AUTHDBNAME)
         return self.m
 
-    def savebackup2db(self, data, db="macd", collection="operatequeue"):
+    def savebackup2db(self, data, db="etfgrid", collection="operatequeue"):
         if not data: return
         db = eval('self.m.client.{}'.format(db))
         db[collection].insert_many(data)
@@ -141,6 +167,12 @@ class trade():
     def adjust_weight(self, stock='000001', weight=10):
         self.user.adjust_weight(stock, weight)
 
+    def updatebuyoppor(self,buyopporlist,lst,tradetype):
+        #buyopporlist = []
+        if not lst: return buyopporlist
+        for line in lst:
+            buyopporlist.append({"stock": line, "tradetype": tradetype})
+        return buyopporlist
 
 def parseargs():
     parser = argparse.ArgumentParser()
@@ -152,11 +184,84 @@ def parseargs():
     return args
 
 if __name__ == '__main__':
+    trading_records = []
+    holding_records = []
+    bylst = []
+    dailybuyoppor = []
     t = trade()
+    #t.connetdb()
+
+    '''
+    #ETF网格交易策略
     s = ETFstrategy()
-    t.buylist, t.selllist = s.getprocedure("procedure_records.csv", False,'159920')
+    df_stocklist = s.import_stocklist("ETFGrid_new")
+    #s.looplist_historyreturn(df_stocklist, actiontype="trade")
+    trading_records, holding_records, t.buylist, t.selllist = s.looplist_historyreturn(df_stocklist,actiontype="trade")
+    print('ETF Grid Strategy buy list:')
+    print(t.buylist)
+    #bylst = t.buyitnow()
+    print ("buy list:{}".format(bylst))
+    dailybuyoppor = t.updatebuyoppor(dailybuyoppor,t.buylist,'ETFGrid')
+    print(dailybuyoppor)
+
+    #现金管理交易策略
+    moneyfund = moneyfundstrategy()
+    df_stocklist = s.import_stocklist("moneyfundstrategy")
+    print(df_stocklist)
+    #s.setlooplist()
+    #getprocedure(self, filename="procedure_records.csv", isdb=False, collection="processstatus", db="etfgrid")
+    trading_records, holding_records, t.buylist, t.selllist = moneyfund.looplist_historyreturn(df_stocklist, actiontype="trade")
+    print('Money fund Strategy buy list:')
+    print(t.buylist)
+    dailybuyoppor = t.updatebuyoppor(dailybuyoppor, t.buylist, 'moneyfund')
+
+    #现金选择权交易策略
+    cashoption = cashoptionstrategy()
+    df_stocklist = s.import_stocklist("cashoption")
+    print(df_stocklist)
+    #s.setlooplist()
+    #getprocedure(self, filename="procedure_records.csv", isdb=False, collection="processstatus", db="etfgrid")
+    trading_records, holding_records, t.buylist, t.selllist = cashoption.looplist_historyreturn(df_stocklist, actiontype="trade")
+    print('Money fund Strategy buy list:')
+    print(t.buylist)
+    dailybuyoppor = t.updatebuyoppor(dailybuyoppor, t.buylist, 'cashoption')
+
+    #可转债交易策略
+    convertiblebond = convertiblebondstrategy()
+    df_stocklist = s.import_stocklist("convertiblebond")
+    print(df_stocklist)
+    #s.setlooplist()
+    #getprocedure(self, filename="procedure_records.csv", isdb=False, collection="processstatus", db="etfgrid")
+    trading_records, holding_records, t.buylist, t.selllist = convertiblebond.looplist_historyreturn(df_stocklist, actiontype="trade")
+    print('onvertible bond Strategy buy list:')
+    print(t.buylist)
+    dailybuyoppor = t.updatebuyoppor(dailybuyoppor, t.buylist, 'convertiblebond')
+    '''
+
+    #B级基金网格交易策略
+    s = FundBstrategy()
+    df_stocklist = s.import_stocklist("fundb")
+    #s.looplist_historyreturn(df_stocklist, actiontype="trade")
+    trading_records, holding_records, t.buylist, t.selllist = s.looplist_historyreturn(df_stocklist,actiontype="trade")
+    print('Fund B Grid Strategy buy list:')
+    print(t.buylist)
+    #bylst = t.buyitnow()
+    print ("buy list:{}".format(bylst))
+    dailybuyoppor = t.updatebuyoppor(dailybuyoppor,t.buylist,'FundB')
+    print(dailybuyoppor)
+
+    df = pd.DataFrame(dailybuyoppor)
+    print(df)
+    '''
+    m = mail.mail()
+    m.setmessage("buylist:{}".format(bylst))
+    m.sendmail()
+    m.disconnect()
+    '''
+    t.savebackup2db(bylst)
     #for stock in t.selllist:
      #   t.sell(stock)
+
 
 
     #bylst = t.buyitnow()
