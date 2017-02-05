@@ -96,13 +96,37 @@ class MongoDB(BaseDB):
         self._db_session.close()
         return True
 
+    def save_nav(self, db_name, collection,fields,data_set,show_progress=False):
+        db = eval("self.client.{}".format(db_name))
+        record_num = len(data_set.Data[0])
+        if record_num > 500:
+            show_progress = True
+             
+        if show_progress:
+            start = clock()  
+            sys.stdout.write("Writing %s: %d/%d \r" %(collection,0,record_num))
 
+        for j in range(record_num):
+            table_set = db[collection]
+            if show_progress and j % 10 == 0:
+                sys.stdout.write("Writing %s: %d/%d \r" %(collection,j,record_num))
+            table_set.update_one({"date":data_set.Times[j]},
+                {"$set":{ 
+                    "nav":data_set.Data[0][j]}}, upsert=True)   
+         
+        if show_progress:
+            finish = clock()
+            print("\nUpload complete in %.2fs" %(finish-start))
+        return True
+               
     def save_data(self, db_name, collection,fields,data_set,show_progress=False):        
         #print("===Saving %s to %s @%s===" %(collection,db_name,self.__server_ip))
         
         db = eval("self.client.{}".format(db_name))
         record_num = len(data_set.Data[0])
-
+        if record_num > 500:
+            show_progress = True
+             
         if show_progress:
             start = clock()  
             sys.stdout.write("Writing %s: %d/%d \r" %(collection,0,record_num))

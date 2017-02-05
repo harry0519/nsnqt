@@ -1,13 +1,4 @@
 # -*- coding: utf-8 -*-
-
-"""
-legit.helpers
-~~~~~~~~~~~~~
-
-Various Python helpers.
-"""
-
-
 import os
 import platform
 

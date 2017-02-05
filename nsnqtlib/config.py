@@ -8,8 +8,6 @@ import configparser as cp
 config = cp.ConfigParser()
 config.read('config.ini')
 
-
-# print(config.sections())
 #Use Aliyun environment settings
 DB_SERVER = serverlist.ALIYUN_SERVERS_IP
 DB_PORT = serverlist.ALIYUN_MONGODB_PORT
