@@ -19,8 +19,8 @@ from nsnqtlib.servers.serverlist import LOCAL_SERVER_IP,MONGODB_PORT_DEFAULT
 
 
 dblogger = logging.getLogger()
-start_day = "2017-1-24"#datetime.today()
-end_day   = "2017-1-26"#datetime.today()
+start_day = "2017-2-3"#datetime.today()
+end_day   = "2017-2-3"#datetime.today()
 
 def init_log():
     dblogger.setLevel(logging.DEBUG)
@@ -59,7 +59,7 @@ def stock_daily_update():
     for j in range(security_list_size):
         stock_name = security_list.Data[0][j]
 
-        if stock_name[0] == '0':
+        if stock_name[0] == '3':
             #ipo_day = company_general.Data[2][j]
 
             stock_data = local_wnd.get_history_data(stock_name,regular_fields,start_day,end_day)
@@ -126,6 +126,7 @@ def index_daily_update():
     w.wset("sectorconstituent","sectorid=1000022276000000") # 全部上市美股
     w.wset("sectorconstituent","sectorid=a005010100000000") # NASDAQ 上市股票
     w.wset("sectorconstituent","sectorid=a005010200000000") # NYSE   上市股票
+    w.wset("sectorconstituent","sectorid=1000006535000000") #美国公募基金
     
     
     w.wset("sectorconstituent","sectorid=a599010101000000") # 中金所所有品种
@@ -359,11 +360,11 @@ def get_bond_list():
 
 if __name__ == '__main__':
     init_log()
-    #stock_daily_update()   
-    #index_daily_update()
+    stock_daily_update()   
+    index_daily_update()
     
     #validation_test()
-
+    '''
 
     local_wnd = WindQuote.WndQuery()
     local_db = mongodb.MongoDB()
@@ -376,7 +377,7 @@ if __name__ == '__main__':
     create_ab_base("1000023348000000",local_wnd,local_db,ali_db,"ab",2)# A,B均上市母代码
     create_one_etf("1000023349000000",local_wnd,local_db,ali_db,"ab")# A,B均上市A代码
     create_one_etf("1000023350000000",local_wnd,local_db,ali_db,"ab")# A,B军上市B代码
-
+    '''
 
     
     

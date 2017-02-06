@@ -29,7 +29,7 @@ def get_code_type(code):
 
     assert type(code) is str, 'stock code need str type'
 
-    if code.startswith(('00','01','02','03', '30', '60','61','62','63','stock')):
+    if code.startswith(('00','01','02','03', '30', '60','61','62','63','stock','ml_security_table')):
         return 'stock'
     elif code in cbond_list:
         return 'cbond'
@@ -44,14 +44,17 @@ def get_quote_string(code):
     quote_list = base_fields
     stype = get_code_type(code)
 
-    if stype in ['stock','cbond','index'] :
+    if stype in ['stock','cbond','index','ml_security_table','etf'] :
         quote_string = quote_string + ','+ stock_fields
         quote_list.append(stock_fields)
-    elif stype == 'etf' or stype == 'fund':
+    elif stype == 'ab_etf' or stype == 'fund':
         quote_string = fund_fields
-        quote_list= fund_list
+        quote_list = fund_list
+    elif stype == 'ab':
+        quote_string = quote_string + ','+ stock_fields
+        quote_list.append(stock_fields)            
     elif stype == 'future':
-        quote_string == quote_string + ','+future_fields
+        quote_string = quote_string + ','+ future_fields
         quote_list.append(future_fields)
 
     return quote_string, quote_list

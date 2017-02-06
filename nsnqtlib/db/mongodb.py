@@ -6,7 +6,7 @@ from pymongo import MongoClient
 import pandas as pd
 import nsnqtlib.db.fields
 from nsnqtlib.db.base  import BaseDB
-from nsnqtlib.servers.serverlist import LOCAL_SERVER_IP,MONGODB_PORT_DEFAULT
+from nsnqtlib.servers.serverlist import *
 from nsnqtlib.config import DB_SERVER,DB_PORT,USER,PWD,AUTHDBNAME
 import sys
 import time
@@ -27,7 +27,7 @@ class MongoDB(BaseDB):
         dblogger.addHandler(fh)  
         dblogger.addHandler(ch)
     def __init__(self,ip=LOCAL_SERVER_IP, 
-                     port=MONGODB_PORT_DEFAULT, 
+                     port=LOCAL_MONGODB_PORT, 
                      user_name=None, 
                      pwd=None,
                      authdb=None):
@@ -38,8 +38,12 @@ class MongoDB(BaseDB):
         self.__authdb = authdb
         super(MongoDB,self).__init__(ip=ip,port=port,user_name=user_name,pwd=pwd,authdb=authdb)
         self.client = self.connect()
-    
-    def getallcollections(self,db="ml_security_table"):
+
+    def print_config(self):
+        print("ip=%s:%s,user_name=%s,pwd=%s,authdb=%s" %(self.__server_ip,self.__server_port,\
+            self.__user_name,self.__pwd,self.__authdb))
+
+    def getallcollections(self,db="ml_security_table"):        
         cls = [i for i in eval("self.client.{}".format(db)).collection_names()]
         return cls
 
