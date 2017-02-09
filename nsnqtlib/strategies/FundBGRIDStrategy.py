@@ -27,7 +27,7 @@ class FundBstrategy(basestrategy):
     def import_stocklist(self, stocklistname):
         df = pd.read_csv(str(stocklistname) + '.csv')
         #df = pd.read_csv(str(stocklistname) + '.csv', parse_dates=['startdate'])
-        df['code'] = df['code'].astype('str')
+        df['stock'] = df['stock'].astype('str')
         count = 0
         df_len = len(df.index)
         while (count < df_len):
@@ -82,6 +82,7 @@ class FundBstrategy(basestrategy):
             #query.to_csv(collection)
             #df = pd.DataFrame(query)
             #df.to_csv(collection+'new.csv')
+            print(query)
             print('downloaded')
             return self.formatquery(query, out)
 
@@ -187,7 +188,9 @@ class FundBstrategy(basestrategy):
                 par.append(df.iat[count, columncount])
                 columncount = columncount + 1
             #print(par)
-            stock_name = str(df.iat[count, 0])
+            #stock_name = str(df.iat[count, 'stock'])
+            stock_name = str(df.ix[count, 'stock'])
+            self.lateststatus = []
             #try:
             if actiontype == 'regression':
                 tr,hr = self.historyreturn(stock_name, par)
@@ -203,6 +206,8 @@ class FundBstrategy(basestrategy):
                 self.saveprocedure2db(collection=stock_name)
             elif actiontype == 'trade':
                 print(stock_name)
+                #stock_name = stock_name[0:6]
+                #print(stock_name)
                 buy, sell = self.getprocedure(isdb=True, collection=stock_name)
                 buylist.extend(buy)
                 selllist.extend(sell)
@@ -241,13 +246,12 @@ class FundBstrategy(basestrategy):
         #position = lst_index[0] / lst_len
         #print(position)
         #lst[count][6] = position
-
         #and self.condition7(close, par[0])  and self.condition9(close, pre_close)
         #if self.condition10(close) and self.condition9(close, pre_close) and self.MA_condition(lst, count):
 
-        if self.ETFGridbuycondition2(close, par[0]) and self.bought == False:
+        if self.ETFGridbuycondition2(close, float(par[0])) and self.bought == False:
             #self.startingprice = close
-            self.startingprice = par[0]
+            self.startingprice = float(par[0])
             #print('startingprice'+str(self.startingprice)+' ')
             #print('statingdate'+str(dat))
 
@@ -330,7 +334,10 @@ class FundBstrategy(basestrategy):
         #if datalen < 200: return buy, sell, False
         #print('downloaded')
         #print(df)
+        print(df)
+        print(collection)
         stock = str(df['stock'].iloc[0])
+
         print('stock name:')
         print(stock)
         print('realtime quetes:')
@@ -381,6 +388,7 @@ class FundBstrategy(basestrategy):
         for line in self.lateststatus:
             bulk.find({'date': line[1]}).upsert().update( \
                 {'$set': {'stock': line[0], \
+                          'date': line[0], \
                           'close': line[2], \
                           'startprice': line[3], \
                           'buytimes': line[4], \
@@ -460,9 +468,14 @@ if __name__ == '__main__':
     s = FundBstrategy()
 
     df_stocklist = s.import_stocklist("fundb")
+    print(df_stocklist)
+    formatlist = ['stock', 'startprice']
+    df_stocklist = s._getdata('FundBstrategy', 'strategyconfig',formatlist,isfilt=False)
+    df_stocklist = df_stocklist[['stock', 'startprice']]
+    #print(newdf)
+    print(df_stocklist)
     #stocklst = s.setlooplist()
     #df_stocklist = pd.DataFrame(s.setlooplist())
-    print(df_stocklist)
     #stock = df_stocklist.iat[0,0]
     #print("test:"+stock)
     #df.iat[count, 0]
@@ -477,12 +490,14 @@ if __name__ == '__main__':
     #print('trade records:')
     #print(data)
 
-    s.saveholding2csv()
+    #s.saveholding2csv()
 
+    '''
     df = pd.read_csv('trading_records.csv')
     report = reportforms(df)
     report.cumulative_graph()
     report.positiongain(20)
+    '''
     #buy = s.getprocedure('procedure_records.csv')
 
     #print(s.tempstatus)
