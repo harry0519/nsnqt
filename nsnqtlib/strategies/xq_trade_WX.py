@@ -243,7 +243,7 @@ if __name__ == '__main__':
     #df_stocklist = s.import_stocklist("fundb")
     #df_stocklist = s._getdata('FundBstrategy', 'strategyconfig')
     formatlist = ['stock', 'startprice', 'status']
-    df_stocklist = s._getdata('FundBstrategy', 'strategyconfig',formatlist)
+    df_stocklist = s._getdata('FundBstrategy', 'strategyconfig',formatlist,isfilt=False)
     print(df_stocklist)
 
     #s.looplist_historyreturn(df_stocklist, actiontype="trade")
@@ -257,6 +257,7 @@ if __name__ == '__main__':
 
     df = pd.DataFrame(dailybuyoppor)
     print(df)
+
     '''
     m = mail.mail()
     m.setmessage("buylist:{}".format(bylst))
