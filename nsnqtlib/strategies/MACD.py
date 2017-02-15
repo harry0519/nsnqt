@@ -109,16 +109,16 @@ class macd(object):
             macd = data[0]["macd"]
             try:
                 c_close = currentdata["trade"].ix[collection.split(".")[0]]
+            
+                n_s_ema = (s_ema*(emaslow-1)+ 2*c_close)/(emaslow+1)
+                n_f_ema = (f_ema*(emafast-1)+ 2*c_close)/(emafast+1)
+                n_diff = n_f_ema-n_s_ema
+                n_dem = (dem*(demday-1)+ 2*n_diff)/(demday+1)
+                n_macd = 2*(n_diff-n_dem)
+                if macd*n_macd < 0 and n_macd >0:
+                    buylst.append(collection)
             except:
                 print ("error stock:{}".format(collection))
-                continue
-            n_s_ema = (s_ema*(emaslow-1)+ 2*c_close)/(emaslow+1)
-            n_f_ema = (f_ema*(emafast-1)+ 2*c_close)/(emafast+1)
-            n_diff = n_f_ema-n_s_ema
-            n_dem = (dem*(demday-1)+ 2*n_diff)/(demday+1)
-            n_macd = 2*(n_diff-n_dem)
-            if macd*n_macd < 0 and n_macd >0:
-                buylst.append(collection)
         [print ("buylist:{}".format(collection)) for  collection in buylst]
         return buylst
     
