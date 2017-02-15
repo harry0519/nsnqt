@@ -82,6 +82,46 @@ class macd(object):
         
         pass
     
+    def getcurrentdata(self):
+        '''code：代码, name:名称 ,changepercent:涨跌幅 , trade:现价 ,open:开盘价 ,high:最高价, low:最低价, settlement:昨日收盘价 ,
+           volume:成交量 ,turnoverratio:换手率 ,amount:成交量 ,per:市盈率 ,pb:市净率, mktcap:总市值 ,nmc:流通市值
+        '''
+        out = ["code","trade","open","high","low","settlement"]
+        rst = ts.get_today_all()
+        return rst[out].set_index('code')
+    
+    def gettradebuylst(self):
+        dbname = "stockdatas"
+        num = 1
+        emaslow  = 26
+        emafast = 12
+        demday = 9
+        filt = [{"$sort":{"date":-1}},{"$limit":num}]
+        buylst = []
+        currentdata = self.getcurrentdata()
+        for i in self.looplist:
+            collection = i
+            query = self.db.read_data(dbname,collection,filt,is_aggregate=True)
+            data = [i for i in query]
+            s_ema = data[0]["ema26"]
+            f_ema = data[0]["ema12"]
+            dem = data[0]["dem9"]
+            macd = data[0]["macd"]
+            try:
+                c_close = currentdata["trade"].ix[collection.split(".")[0]]
+            except:
+                print ("error stock:{}".format(collection))
+                continue
+            n_s_ema = (s_ema*(emaslow-1)+ 2*c_close)/(emaslow+1)
+            n_f_ema = (f_ema*(emafast-1)+ 2*c_close)/(emafast+1)
+            n_diff = n_f_ema-n_s_ema
+            n_dem = (dem*(demday-1)+ 2*n_diff)/(demday+1)
+            n_macd = 2*(n_diff-n_dem)
+            if macd*n_macd < 0 and n_macd >0:
+                buylst.append(collection)
+        [print ("buylist:{}".format(collection)) for  collection in buylst]
+        return buylst
+    
     def save2db(self):
         pass
     
@@ -93,7 +133,9 @@ class macd(object):
 if __name__ == '__main__':
     s = macd()
     s.setlooplist()
-    s.getlastbuylst()
+#     s.getlastbuylst()
+    s.gettradebuylst()
+    
 #     s.gethistorybuylst()
      
 
