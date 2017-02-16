@@ -205,22 +205,25 @@ if __name__ == '__main__':
     print(dailybuyoppor)
     '''
 
-    '''
+
     #现金管理交易策略
     moneyfund = moneyfundstrategy()
     #df_stocklist = s.import_stocklist("moneyfundstrategy")
-    formatlist = ['stock', 'startprice', 'status']
-    df_stocklist = s._getdata('FundBstrategy', 'strategyconfig',formatlist,isfilt=False)
+    formatlist = ['stock', 'status']
+    df_stocklist = moneyfund._getdata('moneyfundstrategy', 'strategyconfig', formatlist, isfilt=False)
+    #df_stocklist = moneyfund._getdata('moneyfundstrategy', 'strategyconfig',formatlist,isfilt=False)
     print(df_stocklist)
-    '''
+
     #s.setlooplist()
     #getprocedure(self, filename="procedure_records.csv", isdb=False, collection="processstatus", db="etfgrid")
-    '''
+
     trading_records, holding_records, t.buylist, t.selllist = moneyfund.looplist_historyreturn(df_stocklist, actiontype="trade")
     print('Money fund Strategy buy list:')
     print(t.buylist)
+    bylst = t.buyitnow()
+    print ("buy list:{}".format(bylst))
     dailybuyoppor = t.updatebuyoppor(dailybuyoppor, t.buylist, 'moneyfund')
-    '''
+
     '''
     #现金选择权交易策略
     cashoption = cashoptionstrategy()
@@ -245,6 +248,7 @@ if __name__ == '__main__':
     dailybuyoppor = t.updatebuyoppor(dailybuyoppor, t.buylist, 'convertiblebond')
     '''
 
+
     #B级基金网格交易策略
     s = FundBstrategy()
     #s = eval('FundBstrategy()')
@@ -266,6 +270,7 @@ if __name__ == '__main__':
 
     df = pd.DataFrame(dailybuyoppor)
     print(df)
+
 
     '''
     m = mail.mail()
