@@ -93,8 +93,8 @@ class FundBstrategy(basestrategy):
         print(data)
         #data = self._getdata(collection, "tushare")
 
-        df = pd.DataFrame(data)
-        df.to_csv(collection+'new.csv')
+        #df = pd.DataFrame(data)
+        #df.to_csv(collection+'new.csv')
         #datalen = len(data)
         #if datalen <= 200: return trading_record, holding_record, False
         self.selltimes = 0
@@ -111,7 +111,6 @@ class FundBstrategy(basestrategy):
                 if issell:
                     holding_record.remove(b)
                     trading_record.append(traderecord)
-                    #self.savetraderecord2db(traderecord)
                     break
 
             if isbuy:
@@ -120,6 +119,8 @@ class FundBstrategy(basestrategy):
                 print(count)
 
             count += 1
+        self.trading_records = trading_record
+        self.savetrading2db(db="regressiontraderesult", strategyname="strategytradersult")
         return trading_record, holding_record
 
     #返回值的最后一个是代表是否有超过200个交易日的数据
@@ -129,7 +130,8 @@ class FundBstrategy(basestrategy):
         out = ["stock", "date", "close", "startprice", "buytimes", "selltimes"]
 
         #下载股票数据
-        data = self._getdata(collection,"tushare")
+        data = self._getdata(collection, 'ab')
+        #data = self._getdata(collection,"tushare")
         datalen = len(data)
         if datalen <= 200: return trading_record, holding_record, False
         lst = [l for l in data[self.formatlist].fillna(0).values if l[1] != 0]
@@ -187,7 +189,7 @@ class FundBstrategy(basestrategy):
             while (columncount < column_num):
                 par.append(df.iat[count, columncount])
                 columncount = columncount + 1
-            #print(par)
+            print(par)
             #stock_name = str(df.iat[count, 'stock'])
             stock_name = str(df.ix[count, 'stock'])
             self.lateststatus = []
@@ -283,8 +285,8 @@ class FundBstrategy(basestrategy):
 
         #if self.holdingtime_condition(hold_days, dayout) or self.ETFGridsellcondition1(high, self.startingprice, self.selltimes):
         if self.ETFGridsellcondition1(high, self.startingprice, self.selltimes):
-            #sell_date = sell_date.strftime('%Y-%m-%d')
-            #buy_date = buy_date.strftime('%Y-%m-%d')
+            sell_date = sell_date.strftime('%Y-%m-%d')
+            buy_date = buy_date.strftime('%Y-%m-%d')
             self.selltimes = self.selltimes + 1
             self.buytimes = self.buytimes - 1
             print('sell date:'+str(sell_date)+'  sell price:'+str(close))
@@ -388,7 +390,7 @@ class FundBstrategy(basestrategy):
         for line in self.lateststatus:
             bulk.find({'date': line[1]}).upsert().update( \
                 {'$set': {'stock': line[0], \
-                          'date': line[0], \
+                          'date': line[1], \
                           'close': line[2], \
                           'startprice': line[3], \
                           'buytimes': line[4], \
@@ -412,7 +414,7 @@ class FundBstrategy(basestrategy):
         bulk.execute()
         return
     '''
-
+    '''
     def savetraderecord2db(self, data, db="etfgrid", collection="traderecords"):
         if not data: return
         localbackup = []
@@ -425,6 +427,7 @@ class FundBstrategy(basestrategy):
         db[collection].insert_many(localbackup)
         print('save trade record to db')
         return
+    '''
 
     def stopgain_condition(self, buy_price, current_price, grads=0.1):
         if (current_price - buy_price) / buy_price >= grads:
@@ -467,8 +470,8 @@ if __name__ == '__main__':
 
     s = FundBstrategy()
 
-    df_stocklist = s.import_stocklist("fundb")
-    print(df_stocklist)
+    #df_stocklist = s.import_stocklist("fundb")
+    #print(df_stocklist)
     formatlist = ['stock', 'startprice']
     df_stocklist = s._getdata('FundBstrategy', 'strategyconfig',formatlist,isfilt=False)
     df_stocklist = df_stocklist[['stock', 'startprice']]
@@ -479,9 +482,7 @@ if __name__ == '__main__':
     #stock = df_stocklist.iat[0,0]
     #print("test:"+stock)
     #df.iat[count, 0]
-    #s.setlooplist()
-    '''股票回测数据需要每天更新，这地方需要跑下最新的数据，现在还是取全部数据'''
-    '''每天实时数据和历史回测数据比较好了，没有完成每天去跑'''
+    #s.setlooplist()'
     s.looplist_historyreturn(df_stocklist,actiontype="regression")
     s.savetrading2csv()
     s.savetrading2db(strategyname='FundBGrid')
