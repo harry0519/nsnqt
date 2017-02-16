@@ -209,7 +209,7 @@ if __name__ == '__main__':
     #现金管理交易策略
     moneyfund = moneyfundstrategy()
     #df_stocklist = s.import_stocklist("moneyfundstrategy")
-    formatlist = ['stock', 'status']
+    formatlist = ['stock', 'startprice','status']
     df_stocklist = moneyfund._getdata('moneyfundstrategy', 'strategyconfig', formatlist, isfilt=False)
     #df_stocklist = moneyfund._getdata('moneyfundstrategy', 'strategyconfig',formatlist,isfilt=False)
     print(df_stocklist)
