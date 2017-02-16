@@ -22,7 +22,7 @@ class trade():
         self.buylist = []
         self.selllist = []
         self.limitnum = 20
-        #self.m = MongoDB()
+        self.m = MongoDB()
 
     def getcurrentdata(self):
         '''code：代码, name:名称 ,changepercent:涨跌幅 , trade:现价 ,open:开盘价 ,high:最高价, low:最低价, settlement:昨日收盘价 ,
@@ -203,18 +203,25 @@ if __name__ == '__main__':
     print ("buy list:{}".format(bylst))
     dailybuyoppor = t.updatebuyoppor(dailybuyoppor,t.buylist,'ETFGrid')
     print(dailybuyoppor)
+    '''
 
+    '''
     #现金管理交易策略
     moneyfund = moneyfundstrategy()
-    df_stocklist = s.import_stocklist("moneyfundstrategy")
+    #df_stocklist = s.import_stocklist("moneyfundstrategy")
+    formatlist = ['stock', 'startprice', 'status']
+    df_stocklist = s._getdata('FundBstrategy', 'strategyconfig',formatlist,isfilt=False)
     print(df_stocklist)
+    '''
     #s.setlooplist()
     #getprocedure(self, filename="procedure_records.csv", isdb=False, collection="processstatus", db="etfgrid")
+    '''
     trading_records, holding_records, t.buylist, t.selllist = moneyfund.looplist_historyreturn(df_stocklist, actiontype="trade")
     print('Money fund Strategy buy list:')
     print(t.buylist)
     dailybuyoppor = t.updatebuyoppor(dailybuyoppor, t.buylist, 'moneyfund')
-
+    '''
+    '''
     #现金选择权交易策略
     cashoption = cashoptionstrategy()
     df_stocklist = s.import_stocklist("cashoption")
@@ -240,6 +247,8 @@ if __name__ == '__main__':
 
     #B级基金网格交易策略
     s = FundBstrategy()
+    #s = eval('FundBstrategy()')
+    #print('successfully')
     #df_stocklist = s.import_stocklist("fundb")
     #df_stocklist = s._getdata('FundBstrategy', 'strategyconfig')
     formatlist = ['stock', 'startprice', 'status']
@@ -250,7 +259,7 @@ if __name__ == '__main__':
     trading_records, holding_records, t.buylist, t.selllist = s.looplist_historyreturn(df_stocklist,actiontype="trade")
     print('Fund B Grid Strategy buy list:')
     print(t.buylist)
-    #bylst = t.buyitnow()
+    bylst = t.buyitnow()
     print ("buy list:{}".format(bylst))
     dailybuyoppor = t.updatebuyoppor(dailybuyoppor,t.buylist,'FundB')
     print(dailybuyoppor)
