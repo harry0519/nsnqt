@@ -44,7 +44,38 @@ class moneyfundstrategy(basestrategy):
             count = count + 1
         return df
 
-    def _getdata(self,collection="600455.SH",db="ml_security_table"):
+    def _getdata(self,collection="600455.SH",db="ml_security_table",out=[],isfilt=True,filt={}):
+        self.collection = collection
+        if db == "tushare":
+            #d1 = datetime.datetime.now()
+            #d2 = d1 + datetime.timedelta(-240)
+            #d1 = d1.strftime('%Y-%m-%d')
+            #d2 = d2.strftime('%Y-%m-%d')
+            #query = ts.get_hist_data(collection, start=d2, end=d1, )
+            query = ts.get_hist_data(collection, start='2012-01-01', end='2017-02-03')
+            query['date'] = query.index
+            query = query.sort_index(axis=0, ascending=True)
+            query['pre_close'] = query['close'].shift(1)
+            query.to_csv(collection + 'new.csv')
+            return query
+        elif db == 'local':
+            query = pd.read_csv(str(collection) + '.csv')
+            #out = self.formatlist
+            return query
+        else:
+            if not out: out = self.formatlist
+            if isfilt and not filt: filt = {"date": {"$gt": self.startdate}}
+            query = self.m.read_data(db, collection, filt=filt)
+            #query.to_csv(collection)
+            #df = pd.DataFrame(query)
+            #df.to_csv(collection+'new.csv')
+            print(query)
+            print('downloaded')
+            return self.formatquery(query, out)
+
+    '''
+    #def _getdata(self,collection="600455.SH",db="ml_security_table"):
+    def _getdata(self, collection="600455.SH", db="ml_security_table", out=[], isfilt=True, filt={}):
         if db == "ml_security_table":
             query = self.m.read_data(db,collection,filt={"date":{"$gt": self.startdate}})
             query.to_csv('db_'+collection + '.csv')
@@ -65,7 +96,7 @@ class moneyfundstrategy(basestrategy):
             query = pd.read_csv(str(collection) + '.csv')
             #out = self.formatlist
             return query
-
+    '''
     '''
     def _getdata(self,collection="600455.SH",db="ml_security_table"):
         #query = pd.read_csv(str(collection) + '.csv', parse_dates=['date'])
@@ -170,18 +201,19 @@ class moneyfundstrategy(basestrategy):
                 par.append(df.iat[count, columncount])
                 columncount = columncount + 1
             print(par)
-            stock_name = str(df.iat[count, 0])
-            #try:
-            if actiontype == 'regression':
-                tr,hr = self.historyreturn(stock_name, par)
-                self.trading_records.extend(tr)
-                self.holding_records.extend(hr)
-            elif actiontype == 'trade':
-                buy, sell = self.getprocedure(isdb=True, collection=stock_name)
-                buylist.extend(buy)
-                selllist.extend(sell)
-            #except:
-                #error_list.append(stock_name)
+            #stock_name = str(df.iat[count, 0])
+            stock_name = str(df.ix[count, 'stock'])
+            try:
+                if actiontype == 'regression':
+                    tr,hr = self.historyreturn(stock_name, par)
+                    self.trading_records.extend(tr)
+                    self.holding_records.extend(hr)
+                elif actiontype == 'trade':
+                    buy, sell = self.getprocedure(isdb=True, collection=stock_name)
+                    buylist.extend(buy)
+                    selllist.extend(sell)
+            except:
+                 error_list.append(stock_name)
             count = count + 1
         print(error_list)
         print(buylist)
@@ -308,7 +340,8 @@ class moneyfundstrategy(basestrategy):
         #print(stock)
         #pre_close = float(df['close'].iloc[df_len-1])
         #print(pre_close)
-
+        print(collection)
+        print('159005')
         new_df = ts.get_realtime_quotes(collection)
         print(new_df)
         pre_close = float(new_df['pre_close'].iloc[0])
