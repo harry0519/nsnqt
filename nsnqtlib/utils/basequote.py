@@ -25,39 +25,47 @@ etf_list = ['123456']
 判断代码是属于那种类型
 :return str 返回code类型, fund 基金 stock 股票
 """
+stock_head = ('0', '3', '6','stock','ml_security_table','etf','cbond')
 def get_code_type(code):
 
     assert type(code) is str, 'stock code need str type'
 
-    if code.startswith(('00','01','02','03', '30', '60','61','62','63','stock','ml_security_table')):
+    if code.startswith(stock_head):
         return 'stock'
-    elif code in cbond_list:
+    '''elif code in cbond_list:
         return 'cbond'
     elif code in index_list:
         return 'index'
     elif code in etf_list:
-        return 'etf'
-    return 'fund'
+        return 'etf'''
+    return code
 
 def get_quote_string(code):
     quote_string = ",".join(base_fields)
     quote_list = base_fields
     stype = get_code_type(code)
 
-    if stype in ['stock','cbond','index','ml_security_table','etf'] :
+    print(quote_string)
+    if stype == 'stock':
         quote_string = quote_string + ','+ stock_fields
         quote_list.append(stock_fields)
-    elif stype == 'ab_etf' or stype == 'fund':
+    elif stype == 'ab_etf': #fund
         quote_string = fund_fields
-        quote_list = fund_list
+        quote_list.clear()
+        quote_list.append(fund_fields)
     elif stype == 'ab':
-        quote_string = quote_string + ','+ stock_fields
-        quote_list.append(stock_fields)            
+        quote_string = quote_string + ','+ stock_fields+','+ fund_fields
+        quote_list.append(stock_fields)  
+        quote_list.append(fund_fields)        
     elif stype == 'future':
         quote_string = quote_string + ','+ future_fields
         quote_list.append(future_fields)
-
+    else:
+        print("nothing happen")
     return quote_string, quote_list
 
  
+if __name__ == '__main__': 
+    quote_string, quote_list = get_quote_string("future") 
+    print(quote_string)  
 

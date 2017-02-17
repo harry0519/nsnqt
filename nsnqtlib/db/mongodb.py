@@ -122,8 +122,39 @@ class MongoDB(BaseDB):
             finish = clock()
             print("\nUpload complete in %.2fs" %(finish-start))
         return True
-               
-    def save_data(self, db_name, collection,fields,data_set,show_progress=False):        
+
+    def save_ab(self, db_name, collection,fields,data_set,show_progress=False):        
+        #print("===Saving %s to %s @%s===" %(collection,db_name,self.__server_ip))
+        db = eval("self.client.{}".format(db_name))
+        record_num = len(data_set.Data[0])
+        if record_num > 500:
+            show_progress = True
+             
+        if show_progress:
+            start = clock()  
+            sys.stdout.write("Writing %s: %d/%d \r" %(collection,0,record_num))
+
+        for j in range(record_num):
+            table_set = db[collection]
+            if show_progress and j % 10 == 0:
+                sys.stdout.write("Writing %s: %d/%d \r" %(collection,j,record_num))
+            table_set.update_one({"date":data_set.Times[j]},
+                {"$set":{ 
+                    "pre_close":data_set.Data[0][j],
+                    "open":data_set.Data[1][j],
+                    "high":data_set.Data[2][j],
+                    "low":data_set.Data[3][j],
+                    "close":data_set.Data[4][j],
+                    "volume":data_set.Data[5][j],
+                    "amt":data_set.Data[6][j],
+                    "dealnum":data_set.Data[7][j],
+                    "nav":data_set.Data[8][j]}}, upsert=True)   
+         
+        if show_progress:
+            finish = clock()
+            print("\nUpload complete in %.2fs" %(finish-start))
+        return True
+    def save_stock(self, db_name, collection,fields,data_set,show_progress=False):        
         #print("===Saving %s to %s @%s===" %(collection,db_name,self.__server_ip))
         
         db = eval("self.client.{}".format(db_name))
@@ -153,6 +184,18 @@ class MongoDB(BaseDB):
         if show_progress:
             finish = clock()
             print("\nUpload complete in %.2fs" %(finish-start))
+        return True
+    def save_data(self, db_name, collection,fields,data_set,show_progress=False):        
+        #print("===Saving %s to %s @%s===" %(collection,db_name,self.__server_ip))
+        
+        if db_name == "ab_etf":
+            db_name = "ab"
+            self.save_nav(db_name, collection,fields,data_set,show_progress)
+        elif db_name == "ab":
+            self.save_ab(db_name, collection,fields,data_set,show_progress)
+        else:
+            self.save_stock(db_name, collection,fields,data_set,show_progress)
+    
         return True
 
 #     def save_future_data_to_mdb(self,data_set,table_map,table_name):

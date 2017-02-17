@@ -101,12 +101,24 @@ def get_stock_list():
     w.wset("sectorconstituent","sectorid=a005010200000000") # NYSE   上市股票
     w.wset("sectorconstituent","sectorid=1000006535000000") # 美国公募基金    
     
+    w.wset("sectorconstituent","date=2017-02-12;sectorid=1000015512000000") # 全部国内期货合约（含已下市），463
     w.wset("sectorconstituent","sectorid=a599010101000000") # 中金所所有品种
     w.wset("sectorconstituent","sectorid=a599010201000000") # 上期所全部期货品种
     w.wset("sectorconstituent","sectorid=a599010301000000") # 大连期货交易所所有品种
     w.wset("sectorconstituent","sectorid=a599010401000000") # 郑州期货交易所所有品种
-    w.wset("sectorconstituent","sectorid=1000014797000000") # 沪可质押回购债券
+    w.wset("sectorconstituent","date=2017-02-12;sectorid=a101010706000000") #已到期可转债
+    w.wset("sectorconstituent","date=2017-02-12;sectorid=a201010600000000") #货币市场基金
+    #公募基金
+    #基金市场类（净值），2017-2-13
+    w.wset("sectorconstituent","date=2017-02-12;sectorid=1000008492000000") #全部基金（含发行中，已经到期），6357个
+    w.wset("sectorconstituent","date=2017-02-12;sectorid=a201010700000000") #全部基金，5778
+    w.wset("sectorconstituent","date=2017-02-12;sectorid=1000011866000000") #全部基金（除分级基金），5296
+    #基金市场类（行情），2017-2-13
+    w.wset("sectorconstituent","date=2017-02-12;sectorid=1000019786000000") #全部上市基金，671
 
+    #私募基金
+    w.wset("sectorconstituent","date=2017-02-12;sectorid=1000008494000000") #全部基金（含发行中，已经到期），51134
+    w.wset("sectorconstituent","date=2017-02-12;sectorid=a201010700000000") #全部基金，40080
     '''
 
 def get_etf_list():
@@ -114,8 +126,9 @@ def get_etf_list():
     update_list+= wq.wset("sectorconstituent","sectorid=1000009164000000").Data[1] # 深圳ETF
     return update_list
 
-def get_bond_list():    
-    update_list = wq.wset("sectorconstituent","sectorid=a101020600000000").Data[1] # 可转债
+def get_cbond_list():    
+    update_list = wq.wset("sectorconstituent","sectorid=a101020600000000").Data[1] # 在交易可转债
+    update_list += wq.wset("sectorconstituent","sectorid=a101010706000000").Data[1] #已到期可转债
     return update_list
 
 def get_ab_etf_list():
@@ -159,16 +172,9 @@ def mp_createdb(update_list, process_num,db):
 
     dblogger.info("============%s creation done=============" %(db))
 
-def trigger_server_job():
-    dblogger.info("============starting server job:update_indicators============")
-    output = os.popen('java -jar jenkins-cli.jar -s http://114.55.53.68:65050/ build update_indicators')
 
-    dblogger.info(output.read()) # will print nothing in success case
-    dblogger.info("============Trigger server job done=============")
-    return
-
-# main update entry
-def update_execution():
+# main create entry
+def create_execution():
         
     #update stocks in multi-process
     #wind can't support more than 12 connections
@@ -178,27 +184,22 @@ def update_execution():
     t1 = datetime.today() #(datetime.today()+timedelta(-14)).strftime('%Y-%m-%d')
     t2 = datetime.today()
 
-    mp_update(get_stock_list(),process_max,"ml_security_table",t1,t2)
+    #mp_update(get_stock_list(),process_max,"ml_security_table",t1,t2)
 
-    #t1,t2 = "2017-1-23","2017-2-8"
-
-    mp_update(get_etf_list() , process_min,"etf"  ,t1,t2)
-    mp_update(get_ab_list()  , process_max,"ab"   ,t1,t2)
-    mp_update(get_ab_etf_list()  , process_max,"ab_etf",t1,t2)
-    mp_update(get_bond_list(), 1          ,"cbond",t1,t2)
-
-    print("============All update done=============")
+    #mp_createdb(get_etf_list()    , process_min,"etf").
+    #mp_createdb(get_ab_list()     , process_max,"ab")
+    #mp_createdb(get_ab_etf_list() , process_max,"ab_etf")
+    mp_createdb(get_cbond_list()   , process_min,"cbond")
+    #mp_createdb(get_etfus_list()    , process_min,"etf_us").
+    print("============All creation done=============")
 
 
 if __name__ == '__main__':    
     init_log()
     wq = WindQuote.WndQuery()
     print("main thread started")
-    update_execution()
+    create_execution()
 
-    # trigger JOB in server side
-    trigger_server_job()
-    # 
     
     
 
